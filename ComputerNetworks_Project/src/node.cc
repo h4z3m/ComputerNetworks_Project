@@ -21,7 +21,7 @@ void Node::initialize()
 {
     // TODO - Generated method body
 }
-//add comment
+//add comment2
 void Node::handleMessage(cMessage *msg)
 {
     // TODO - Generated method body
