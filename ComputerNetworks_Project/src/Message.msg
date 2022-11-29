@@ -13,21 +13,15 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef __COMPUTERNETWORKS_PROJECT_NODE_H_
-#define __COMPUTERNETWORKS_PROJECT_NODE_H_
+//
+// TODO generated message class
+//
 
-#include <omnetpp.h>
-//#include "Message_m.h"
-using namespace omnetpp;
-
-/**
- * TODO - Generated class
- */
-class Node : public cSimpleModule
-{
-  protected:
-    virtual void initialize() override;
-    virtual void handleMessage(cMessage *msg) override;
-};
-
-#endif
+packet Message {
+    @customize(true);  // see the generated C++ header for more info
+    int Header;
+    string Payload;
+    char Trailer;
+	int Type;
+	int ack_no;
+}

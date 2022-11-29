@@ -19,6 +19,7 @@ Define_Module(Node);
 
 void Node::initialize()
 {
+
     // TODO - Generated method body
 }
 //add comment2

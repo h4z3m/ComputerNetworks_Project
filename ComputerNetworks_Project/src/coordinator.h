@@ -17,7 +17,7 @@
 #define __COMPUTERNETWORKS_PROJECT_COORDINATOR_H_
 
 #include <omnetpp.h>
-
+#include "Message_m.h"
 using namespace omnetpp;
 
 /**

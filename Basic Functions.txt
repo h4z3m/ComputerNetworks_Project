@@ -20,8 +20,6 @@ add_parity(&msg_object);-->generate&add_parity_bit_to_msg_trailer
 send_message(msg , TD+PT);
 print_before_transmission()-->see system outputs#2
 ////////////////////////////////////////////////////////////////
-
-
  ///reciever_related///
  error_detection(msg_object) --> return true or false (ACK or NACK)
 
