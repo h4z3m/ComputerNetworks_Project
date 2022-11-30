@@ -17,7 +17,9 @@
 #define __COMPUTERNETWORKS_PROJECT_NODE_H_
 
 #include <omnetpp.h>
-//#include "Message_m.h"
+#include "Message_m.h"
+#include <string>
+#include <vector>
 using namespace omnetpp;
 
 /**
@@ -28,6 +30,8 @@ class Node : public cSimpleModule
   protected:
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
+  public:
+    void readMessages(std::string & filepath,std::vector<Message_Base::ErrorCodeType_t> &errorArray, std::vector<std::string> &messageArray);
 };
 
 #endif
