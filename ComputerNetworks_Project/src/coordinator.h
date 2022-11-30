@@ -33,6 +33,7 @@ protected:
 private:
     void read_coordinator(std::string &filepath, int &nodeID,
             float &startTime_sec);
+    void modify_payload(std::string & payload);
 };
 
 #endif

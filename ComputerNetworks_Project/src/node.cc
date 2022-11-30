@@ -31,12 +31,16 @@ void Node::initialize() {
     std::string fp =
             "C:\\Users\\h4z3m\\Desktop\\Files\\College\\3rd\\1st\\CMPN405\\Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\src\\input0.txt";
     readMessages(fp, errorArray, messageArray);
+    std::string t = "abcd";
+    modifyMessage(t);
+    std::cout << t << std::endl;
 
 }
 //add comment2
 //try e-git
 void Node::handleMessage(cMessage *msg) {
     // TODO - Generated method body
+
 }
 
 void Node::readMessages(std::string &filepath,
@@ -55,7 +59,6 @@ void Node::readMessages(std::string &filepath,
 
         std::string tmp_line = "";
         std::string tmp_msg = "";
-        char dummy = 0;
 
         while (std::getline(node_file, tmp_line)) {
             std::stringstream s_stream(tmp_line);
@@ -74,4 +77,10 @@ void Node::readMessages(std::string &filepath,
     }
 
     return;
+}
+
+void Node::modifyMessage(std::string &payload) {
+    int bitIdx = rand() % 8;
+    int byteIdx = rand() % payload.length();
+    payload[byteIdx] ^= (1 << bitIdx);
 }

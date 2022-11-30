@@ -11,7 +11,7 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
-//F you ya ali
+
 
 #include "coordinator.h"
 #include <iostream>
@@ -72,4 +72,11 @@ void Coordinator::read_coordinator(std::string &filepath, int &nodeID,
         coordinator_file >> nodeID >> startTime_sec;
 
     }
+}
+
+
+void Coordinator::modify_payload(std::string & payload){
+
+
+
 }

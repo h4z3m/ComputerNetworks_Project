@@ -32,6 +32,7 @@ class Node : public cSimpleModule
     virtual void handleMessage(cMessage *msg) override;
   public:
     void readMessages(std::string & filepath,std::vector<Message_Base::ErrorCodeType_t> &errorArray, std::vector<std::string> &messageArray);
+    void modifyMessage( std::string &payload);
 };
 
 #endif
