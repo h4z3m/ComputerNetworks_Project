@@ -8,21 +8,35 @@ import computernetworks_project.Node;
 //
 network Network
 {
-    @display("bgb=561,269");
+    parameters:
+        double ProcessingDelay = default(0.5);
+        double DuplicationDelay = default(0.1);
+        double TransmissionDelay = default(0.3);
+        double ErrorDelay = default(4.0);
+        double WindowSize = default(5);
+        double TimeoutInterval = default(10);
+        double ACKLossProbability = default(0.1);
+
+        @display("bgb=281,212");
+
+
+
     submodules:
         coordinator: Coordinator {
-            @display("p=295,168;i=block/cogwheel");
+            @display("p=133,131;i=block/cogwheel");
         }
         Node1: Node {
-            @display("p=410,93;i=device/switch,,0");
+            @display("p=215,40;i=device/switch,,0");
         }
         Node0: Node {
-            @display("p=166,93;i=device/switch");
+            @display("p=54,40;i=device/switch");
         }
     connections:
         coordinator.out1 --> Node1.in_gate;
         coordinator.out0 --> Node0.in_gate;
         Node0.out_gate --> Node1.coordinator_gate;
         Node1.out_gate --> Node0.coordinator_gate;
+
+
 }
 
