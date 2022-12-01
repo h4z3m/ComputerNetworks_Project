@@ -25,14 +25,19 @@ using namespace omnetpp;
 /**
  * TODO - Generated class
  */
-class Node : public cSimpleModule
-{
-  protected:
+class Node: public cSimpleModule {
+private:
+    std::string get_current_dir();
+
+protected:
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
-  public:
-    void readMessages(std::string & filepath,std::vector<Message_Base::ErrorCodeType_t> &errorArray, std::vector<std::string> &messageArray);
-    void modifyMessage( std::string &payload);
+public:
+    void readMessages(std::string &fileName,
+            std::vector<Message_Base::ErrorCodeType_t> &errorArray,
+            std::vector<std::string> &messageArray);
+    void modifyMessage(std::string &payload);
+    void printReading(Message_Base::ErrorCodeType_t errorCode);
 };
 
 #endif

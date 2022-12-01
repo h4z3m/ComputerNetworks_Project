@@ -19,6 +19,8 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <direct.h>
+#define GetCurrentDir _getcwd
 
 Define_Module(Node);
 
@@ -26,14 +28,17 @@ void Node::initialize() {
 
     // TODO - Generated method body
     // TESTING READ MESSAGES
+
     std::vector<Message_Base::ErrorCodeType_t> errorArray;
     std::vector<std::string> messageArray;
-    std::string fp =
-            "C:\\Users\\h4z3m\\Desktop\\Files\\College\\3rd\\1st\\CMPN405\\Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\src\\input0.txt";
+    std::string fp = "input0.txt";
     readMessages(fp, errorArray, messageArray);
+    //TESTING MODIFY MESSAGE
     std::string t = "abcd";
     modifyMessage(t);
     std::cout << t << std::endl;
+    //TESTING PRINT READING
+    printReading(Message_Base::ErrorCodeType_t::ErrorCodeType_LossDupDelay);
 
 }
 //add comment2
@@ -43,13 +48,16 @@ void Node::handleMessage(cMessage *msg) {
 
 }
 
-void Node::readMessages(std::string &filepath,
+void Node::readMessages(std::string &fileName,
         std::vector<Message_Base::ErrorCodeType_t> &errorArray,
         std::vector<std::string> &messageArray) {
 
     // Open the file
+
     std::ifstream node_file;
-    node_file.open(filepath, std::ios::in);
+
+    node_file.open(get_current_dir() +"\\"+ fileName, std::ios::in);
+
     // Return if file was not opened
     if (!node_file.is_open()) {
         std::cerr << "[NODE] Error opening file." << std::endl;
@@ -84,3 +92,20 @@ void Node::modifyMessage(std::string &payload) {
     int byteIdx = rand() % payload.length();
     payload[byteIdx] ^= (1 << bitIdx);
 }
+
+void Node::printReading(Message_Base::ErrorCodeType_t errorCode) {
+
+    std::string node_reading = "At time [" + simTime().str() + "], "
+            + this->getName() + +", Introducing channel error with code = "
+            + std::bitset<4>(errorCode).to_string() + "\n";
+    std::cout << node_reading;
+
+}
+
+std::string Node::get_current_dir() {
+    char buff[FILENAME_MAX]; //create string buffer to hold path
+    GetCurrentDir(buff, FILENAME_MAX);
+    std::string current_working_dir(buff);
+    return current_working_dir;
+}
+

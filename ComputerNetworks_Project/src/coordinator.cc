@@ -12,10 +12,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
-
 #include "coordinator.h"
 #include <iostream>
 #include <fstream>
+#include <direct.h>
+#define GetCurrentDir _getcwd
+
 using namespace std;
 Define_Module(Coordinator);
 enum M_type {
@@ -45,8 +47,7 @@ void Coordinator::initialize() {
 
     //TESTING READ COORDINATOR
 
-    std::string fp =
-            "C:\\Users\\h4z3m\\Desktop\\Files\\College\\3rd\\1st\\CMPN405\\Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\ComputerNetworks_Project\\src\\coordinator.txt";
+    std::string fp = "coordinator.txt";
     int nodeID = 532;
     float start_t = 0;
     read_coordinator(fp, nodeID, start_t);
@@ -57,11 +58,11 @@ void Coordinator::handleMessage(cMessage *msg) {
     // TODO - Generated method body
 }
 
-void Coordinator::read_coordinator(std::string &filepath, int &nodeID,
+void Coordinator::read_coordinator(std::string &fileName, int &nodeID,
         float &startTime_sec) {
     // Open the file
     std::ifstream coordinator_file;
-    coordinator_file.open(filepath, std::ios::in);
+    coordinator_file.open(get_current_dir() + "\\" + fileName, std::ios::in);
     // Return if file was not opened
     if (!coordinator_file.is_open()) {
         std::cerr << "[COORDINATOR] Error opening file." << std::endl;
@@ -74,9 +75,9 @@ void Coordinator::read_coordinator(std::string &filepath, int &nodeID,
     }
 }
 
-
-void Coordinator::modify_payload(std::string & payload){
-
-
-
+std::string Coordinator::get_current_dir() {
+    char buff[FILENAME_MAX]; //create string buffer to hold path
+    GetCurrentDir(buff, FILENAME_MAX);
+    std::string current_working_dir(buff);
+    return current_working_dir;
 }

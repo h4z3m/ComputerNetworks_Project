@@ -245,6 +245,13 @@ int Message_Base::getAck_no() const
     return this->ack_no;
 }
 
+Message_Base * Message_Base::dup() const  {
+
+    Message_Base * mptr =  new Message_Base();
+    return mptr;
+
+}
+
 void Message_Base::setAck_no(int ack_no)
 {
     this->ack_no = ack_no;
@@ -408,6 +415,8 @@ const char **MessageDescriptor::getFieldPropertyNames(int field) const
         default: return nullptr;
     }
 }
+
+
 
 const char *MessageDescriptor::getFieldProperty(int field, const char *propertyName) const
 {
