@@ -1,17 +1,3 @@
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-
 #include "coordinator.h"
 #include <iostream>
 #include <fstream>
@@ -51,6 +37,17 @@ void Coordinator::initialize() {
     int nodeID = 532;
     float start_t = 0;
     read_coordinator(fp, nodeID, start_t);
+    // Send first message to the starting node to indicate it will be sender
+    cMessage *msg = new cMessage();
+
+    switch (nodeID) {
+    case 0:
+        sendDelayed(msg, start_t, "out0");
+        break;
+    case 1:
+        sendDelayed(msg, start_t, "out1");
+        break;
+    }
 }
 
 void Coordinator::handleMessage(cMessage *msg) {
@@ -71,7 +68,7 @@ void Coordinator::read_coordinator(std::string &fileName, int &nodeID,
         // Read the 2 numbers from file
         // NodeID is the first number, then start time in seconds
         coordinator_file >> nodeID >> startTime_sec;
-
+        coordinator_file.close();
     }
 }
 

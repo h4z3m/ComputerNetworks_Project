@@ -1,18 +1,3 @@
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
-
 #include "node.h"
 #include <iostream>
 #include <bitset>
@@ -24,12 +9,48 @@
 
 Define_Module(Node);
 
+void Node::openOutputFile() {
+
+    outputFile.open("output.txt", std::ios::out);
+
+    // Return if file was not opened
+    if (!outputFile.is_open()) {
+        std::cerr << "[NODE] Error opening output file." << std::endl;
+        return;
+    }
+}
+
 void Node::initialize() {
+
+//    // Open output file
+//    openOutputFile();
+//
+//    // TODO - Generated method body
+//    // TESTING READ MESSAGES
+//
+//    std::vector<ErrorCodeType_t> errorArray;
+//    std::vector<std::string> messageArray;
+//    std::string fp = "input0.txt";
+//    readMessages(fp, errorArray, messageArray);
+//    //TESTING MODIFY MESSAGE
+//    std::string t = "abcd";
+//    modifyMessage(t);
+//    std::cout << t << std::endl;
+//    //TESTING PRINT READING
+//    printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
+
+}
+
+void Node::handleMessage(cMessage *msg) {
+    // TODO - Generated method body
+
+    // Open output file
+    openOutputFile();
 
     // TODO - Generated method body
     // TESTING READ MESSAGES
 
-    std::vector<Message_Base::ErrorCodeType_t> errorArray;
+    std::vector<ErrorCodeType_t> errorArray;
     std::vector<std::string> messageArray;
     std::string fp = "input0.txt";
     readMessages(fp, errorArray, messageArray);
@@ -39,25 +60,23 @@ void Node::initialize() {
     Message_Base *mptr =  new Message_Base();
     framing(mptr,t,5,1);
     std::cout << mptr->getPayload() << std::endl;
+
     //TESTING PRINT READING
-    printReading(Message_Base::ErrorCodeType_t::ErrorCodeType_LossDupDelay);
+    printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
 
 }
 
-void Node::handleMessage(cMessage *msg) {
-    // TODO - Generated method body
 
-}
 
 void Node::readMessages(std::string &fileName,
-        std::vector<Message_Base::ErrorCodeType_t> &errorArray,
+        std::vector<ErrorCodeType_t> &errorArray,
         std::vector<std::string> &messageArray) {
 
     // Open the file
 
     std::ifstream node_file;
 
-    node_file.open(get_current_dir() +"\\"+ fileName, std::ios::in);
+    node_file.open(get_current_dir() + "\\" + fileName, std::ios::in);
 
     // Return if file was not opened
     if (!node_file.is_open()) {
@@ -77,10 +96,11 @@ void Node::readMessages(std::string &fileName,
             // Push back into the vectors
             std::bitset<4> tmp_bits(tmp_errorcodeBinary);
             errorArray.push_back(
-                    static_cast<Message_Base::ErrorCodeType_t>(tmp_bits.to_ulong()));
+                    static_cast<ErrorCodeType_t>(tmp_bits.to_ulong()));
             messageArray.push_back(tmp_msg);
             tmp_msg.clear();
             s_stream.clear();
+            node_file.close();
         }
 
     }
@@ -94,12 +114,20 @@ void Node::modifyMessage(std::string &payload) {
     payload[byteIdx] ^= (1 << bitIdx);
 }
 
-void Node::printReading(Message_Base::ErrorCodeType_t errorCode) {
+void Node::printReading(ErrorCodeType_t errorCode) {
 
     std::string node_reading = "At time [" + simTime().str() + "], "
             + this->getName() + +", Introducing channel error with code = "
             + std::bitset<4>(errorCode).to_string() + "\n";
+
     std::cout << node_reading;
+
+
+    std::cout << node_reading << std::endl;
+
+    outputFile << node_reading << std::endl;
+
+
 }
 
 char Node::calculateParity(std::string &payload) {
@@ -150,4 +178,6 @@ std::string Node::get_current_dir() {
     std::string current_working_dir(buff);
     return current_working_dir;
 }
-
+Node::~Node() {
+    outputFile.close();
+}

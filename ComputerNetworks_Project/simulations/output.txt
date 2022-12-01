@@ -1,0 +1,2 @@
+At time [2.55232000351], Node0, Introducing channel error with code = 0111
+
