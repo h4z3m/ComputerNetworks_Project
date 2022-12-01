@@ -52,8 +52,10 @@ public:
             std::vector<ErrorCodeType_t> &errorArray,
             std::vector<std::string> &messageArray);
     void modifyMessage(std::string &payload);
+
     void printReading(ErrorCodeType_t errorCode);
     ~Node();
+
     char calculateParity(std::string &payload);
     void framing(Message_Base *mptr,std::string &payload, int seq, bool modifiedFlag);
 };

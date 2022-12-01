@@ -60,9 +60,13 @@ void Node::handleMessage(cMessage *msg) {
     Message_Base *mptr =  new Message_Base();
     framing(mptr,t,5,1);
     std::cout << mptr->getPayload() << std::endl;
+
     //TESTING PRINT READING
     printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
+
 }
+
+
 
 void Node::readMessages(std::string &fileName,
         std::vector<ErrorCodeType_t> &errorArray,
@@ -116,9 +120,13 @@ void Node::printReading(ErrorCodeType_t errorCode) {
             + this->getName() + +", Introducing channel error with code = "
             + std::bitset<4>(errorCode).to_string() + "\n";
 
+    std::cout << node_reading;
+
+
     std::cout << node_reading << std::endl;
 
     outputFile << node_reading << std::endl;
+
 
 }
 
