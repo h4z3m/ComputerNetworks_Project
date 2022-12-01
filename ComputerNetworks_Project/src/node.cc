@@ -34,15 +34,16 @@ void Node::initialize() {
     std::string fp = "input0.txt";
     readMessages(fp, errorArray, messageArray);
     //TESTING MODIFY MESSAGE
-    std::string t = "abcd";
-    modifyMessage(t);
-    std::cout << t << std::endl;
+    std::string t = "a$bc/d";
+    //modifyMessage(t);
+    Message_Base *mptr =  new Message_Base();
+    framing(mptr,t,5,1);
+    std::cout << mptr->getPayload() << std::endl;
     //TESTING PRINT READING
     printReading(Message_Base::ErrorCodeType_t::ErrorCodeType_LossDupDelay);
 
 }
-//add comment2
-//try e-git
+
 void Node::handleMessage(cMessage *msg) {
     // TODO - Generated method body
 
@@ -99,6 +100,48 @@ void Node::printReading(Message_Base::ErrorCodeType_t errorCode) {
             + this->getName() + +", Introducing channel error with code = "
             + std::bitset<4>(errorCode).to_string() + "\n";
     std::cout << node_reading;
+
+}
+
+char Node::calculateParity(std::string &payload) {
+        char parityByte = 0;
+        int payloadSize = payload.size();
+        for (int i = 0; i < payloadSize; ++i) {
+
+            parityByte = (parityByte ^ payload[i]);
+        }
+
+        parityByte ^= (payloadSize + 2)^(0);
+
+        return parityByte;
+    }
+
+void Node::framing(Message_Base *mptr, std::string &payload, int seq, bool modificationFlag){
+    std::string modified = "$";
+    int payloadSize =payload.size();
+
+    for (int i = 0; i < payloadSize; i++){
+        char c = payload[i];
+
+        if(c== '$'){
+            modified += "/$";
+        } else if(c== '/'){
+            modified += "//";
+        } else{
+            modified += payload[i];
+        }
+
+    }
+    modified +="$";
+
+    char parity = calculateParity(modified);
+    if(modificationFlag == 1)
+        modifyMessage(modified);
+
+    mptr->setPayload(modified.c_str());
+    mptr->setHeader(seq);
+    mptr->setTrailer(parity);
+    mptr->setType(0);
 
 }
 

@@ -38,6 +38,8 @@ public:
             std::vector<std::string> &messageArray);
     void modifyMessage(std::string &payload);
     void printReading(Message_Base::ErrorCodeType_t errorCode);
+    char calculateParity(std::string &payload);
+    void framing(Message_Base *mptr,std::string &payload, int seq, bool modifiedFlag);
 };
 
 #endif
