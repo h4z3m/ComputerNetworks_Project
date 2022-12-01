@@ -61,17 +61,7 @@ void Node::handleMessage(cMessage *msg) {
     framing(mptr,t,5,1);
     std::cout << mptr->getPayload() << std::endl;
     //TESTING PRINT READING
-<<<<<<< HEAD
     printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
-=======
-    printReading(Message_Base::ErrorCodeType_t::ErrorCodeType_LossDupDelay);
-
-}
-
-void Node::handleMessage(cMessage *msg) {
-    // TODO - Generated method body
-
->>>>>>> 878f47c Finished Framing
 }
 
 void Node::readMessages(std::string &fileName,
