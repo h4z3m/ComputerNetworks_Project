@@ -100,7 +100,6 @@ void Node::printReading(Message_Base::ErrorCodeType_t errorCode) {
             + this->getName() + +", Introducing channel error with code = "
             + std::bitset<4>(errorCode).to_string() + "\n";
     std::cout << node_reading;
-
 }
 
 char Node::calculateParity(std::string &payload) {
