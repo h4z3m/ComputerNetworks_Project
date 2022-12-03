@@ -1,7 +1,9 @@
 //
 // Generated file, do not edit! Created by opp_msgtool 6.0 from Message.msg.
 //
+//remote commit
 
+//local commit
 // Disable warnings about unused variables, empty switch stmts, etc:
 #ifdef _MSC_VER
 #  pragma warning(disable:4101)
@@ -245,12 +247,6 @@ int Message_Base::getAck_no() const
     return this->ack_no;
 }
 
-Message_Base * Message_Base::dup() const  {
-
-    Message_Base * mptr =  new Message_Base();
-    return mptr;
-
-}
 
 void Message_Base::setAck_no(int ack_no)
 {
