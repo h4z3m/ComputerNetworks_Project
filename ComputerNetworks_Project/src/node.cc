@@ -1,10 +1,5 @@
 #include "node.h"
-#include <iostream>
-#include <bitset>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <direct.h>
+
 #define GetCurrentDir _getcwd
 
 Define_Module(Node);
@@ -23,7 +18,7 @@ void Node::openOutputFile() {
 void Node::initialize() {
 
 //    // Open output file
-//    openOutputFile();
+   // openOutputFile();
 //
 //    // TODO - Generated method body
 //    // TESTING READ MESSAGES
@@ -55,11 +50,18 @@ void Node::handleMessage(cMessage *msg) {
     std::string fp = "input0.txt";
     readMessages(fp, errorArray, messageArray);
     //TESTING MODIFY MESSAGE
-    std::string t = "a$bc/d";
+    std::string t = "abcd";
     //modifyMessage(t);
     Message_Base *mptr =  new Message_Base();
     framing(mptr,t,5,1);
+
     std::cout << mptr->getPayload() << std::endl;
+
+    std::cout << errorDetection(mptr) << std::endl;
+    std::cout << par("ErrorDelay").doubleValue()<<std::endl;
+    std::cout << par("TransmissionDelay").doubleValue()<<std::endl;
+    printBeforeTransimission(mptr, ErrorCodeType_t::ErrorCodeType_LossDelay  , 0.5 );
+    send_msg(mptr , 1.0);
 
     //TESTING PRINT READING
     printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
@@ -138,7 +140,7 @@ char Node::calculateParity(std::string &payload) {
             parityByte = (parityByte ^ payload[i]);
         }
 
-        parityByte ^= (payloadSize + 2)^(0);
+        //parityByte ^= (payloadSize + 2)^(0);
 
         return parityByte;
     }
@@ -178,6 +180,84 @@ std::string Node::get_current_dir() {
     std::string current_working_dir(buff);
     return current_working_dir;
 }
+
+
+////////////gilany////////////////////////////
+
+bool  Node::errorDetection(Message_Base *msg){
+
+    std::vector<std::bitset<8> > vbitset;
+//    vbitset.push_back(msg->getHeader());
+
+    std::string PayLoad = msg->getPayload();
+
+
+    for (int i = 0;i<PayLoad.size();i++)
+    {
+    vbitset.push_back(PayLoad[i]);
+    }
+    std::bitset<8> trailer_bits = msg->getTrailer();
+    std::bitset<8> check(0);
+
+        for (int i = 0;i<vbitset.size();i++)
+        {
+            check = check^vbitset[i];
+        }
+
+
+
+        check = check^trailer_bits;
+
+
+        if(check==0)
+        {
+            return true;
+        }
+        else{
+            return false;
+        }
+}
+
+void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , double ErrorDelay){
+
+    //TODO get the correct node id
+    //TODO get the correct duplicate version
+    std::bitset<8> trailer_bits = msg->getTrailer();
+    std::bitset<4> code(input);
+    std::cout<<code[3]<<code[2]<<code[1]<<code[0]<<std::endl;
+
+    std::string lost = "No";
+    if(code[2] == 1){
+        lost = "Yes";
+    }
+
+    float delay = 0;
+    if(code[0] == 1){
+        delay = ErrorDelay;
+    }
+
+    std::string line_to_print = "At time [" + simTime().str() + "] Node[ " + this->getName()[4] +"] sent frame with seq_num=["+std::to_string(msg->getHeader())+"], and payload=["+msg->getPayload()+"], and trailer =["+trailer_bits.to_string()+"] ,Lost ["+lost+"], Duplicate ["+std::to_string(msg->getType())+"], Delay ["+std::to_string(delay)+"].\n";
+
+    outputFile << line_to_print << std::endl;
+}
+
+void Node::send_msg(Message_Base *msg ,double TransmissionDelay)
+{
+    msg->setType(0);
+
+    sendDelayed(msg, TransmissionDelay , "out_gate");
+}
+
+
+////////////gilany////////////////////////////
+
+
+
+
+
+
+
+
 Node::~Node() {
     outputFile.close();
 }

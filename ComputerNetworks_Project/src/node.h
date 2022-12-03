@@ -2,10 +2,15 @@
 #define __COMPUTERNETWORKS_PROJECT_NODE_H_
 
 #include <omnetpp.h>
-#include "Message_m.h"
+#include <iostream>
+#include <bitset>
 #include <string>
-#include <vector>
+#include <sstream>
 #include <fstream>
+#include <direct.h>
+#include "Message_m.h"
+#include <vector>
+
 using namespace omnetpp;
 
 /**
@@ -58,6 +63,9 @@ public:
 
     char calculateParity(std::string &payload);
     void framing(Message_Base *mptr,std::string &payload, int seq, bool modifiedFlag);
+    bool errorDetection(Message_Base *msg);
+    void printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , double ErrorDelay );
+    void send_msg(Message_Base *msg ,double TransmissionDelay);
 };
 
 #endif
