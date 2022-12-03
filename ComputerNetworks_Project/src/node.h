@@ -64,8 +64,10 @@ public:
     char calculateParity(std::string &payload);
     void framing(Message_Base *mptr,std::string &payload, int seq, bool modifiedFlag);
     bool errorDetection(Message_Base *msg);
-    void printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , double ErrorDelay );
+    void printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , double ErrorDelay);
     void send_msg(Message_Base *msg ,double TransmissionDelay);
+    void control_print(Message_Base *msg , bool lost);
+    void Timeout_print(int seqnum);
 };
 
 #endif

@@ -224,7 +224,7 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , d
     //TODO get the correct duplicate version
     std::bitset<8> trailer_bits = msg->getTrailer();
     std::bitset<4> code(input);
-    std::cout<<code[3]<<code[2]<<code[1]<<code[0]<<std::endl;
+
 
     std::string lost = "No";
     if(code[2] == 1){
@@ -236,8 +236,8 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , d
         delay = ErrorDelay;
     }
 
-    std::string line_to_print = "At time [" + simTime().str() + "] Node[ " + this->getName()[4] +"] sent frame with seq_num=["+std::to_string(msg->getHeader())+"], and payload=["+msg->getPayload()+"], and trailer =["+trailer_bits.to_string()+"] ,Lost ["+lost+"], Duplicate ["+std::to_string(msg->getType())+"], Delay ["+std::to_string(delay)+"].\n";
-
+    std::string line_to_print = "At time [" + simTime().str() + "] Node[" + this->getName()[4] +"] sent frame with seq_num=["+std::to_string(msg->getHeader())+"], and payload=["+msg->getPayload()+"], and trailer =["+trailer_bits.to_string()+"] ,Lost ["+lost+"], Duplicate ["+std::to_string(msg->getType())+"], Delay ["+std::to_string(delay)+"].\n";
+    std::cout<<line_to_print<<std::endl;
     outputFile << line_to_print << std::endl;
 }
 
@@ -248,10 +248,31 @@ void Node::send_msg(Message_Base *msg ,double TransmissionDelay)
     sendDelayed(msg, TransmissionDelay , "out_gate");
 }
 
-
 ////////////gilany////////////////////////////
 
 
+void Node::control_print(Message_Base *msg , bool lost)
+{
+    double time_after_processing= simTime().dbl()+par("ProcessingDelay").doubleValue();
+    std::string ack;
+    std::string loss = (lost)?"Yes":"No";
+            if(msg->getType() == 2){ack = "NACK";}
+            else if (msg->getType() == 1){ack = "ACK";}
+            else{/*nothing*/}
+
+    std::string line_to_print = "At time ["+ std::to_string(time_after_processing)+", Node [" + this->getName()[4]+"] Sending ["+std::to_string(msg->getHeader())+"] with number["+ + "], loss ["+loss+"]\n" ;
+       std::cout<<line_to_print<<std::endl;
+       outputFile << line_to_print << std::endl;
+
+
+}
+void Node::Timeout_print(int seqnum)
+{
+
+    std::string line_to_print = "Time out event at time ["+ simTime().str()+", at Node [" + this->getName()[4]+"] for frame with seq_num=["+std::to_string(seqnum)+"]; \n" ;
+       std::cout<<line_to_print<<std::endl;
+       outputFile << line_to_print << std::endl;
+}
 
 
 
