@@ -62,7 +62,7 @@ void Node::handleMessage(cMessage *msg) {
     std::cout << par("TransmissionDelay").doubleValue()<<std::endl;
     printBeforeTransimission(mptr, ErrorCodeType_t::ErrorCodeType_LossDelay  , 0.5 );
     send_msg(mptr , 1.0);
-
+    //selfMessageDuplicate(mptr,1.0);
     //TESTING PRINT READING
     printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
 
@@ -274,8 +274,17 @@ void Node::Timeout_print(int seqnum)
        outputFile << line_to_print << std::endl;
 }
 
-
-
+void Node::selfMessageDelay(Message_Base *msg , double delay){
+    scheduleAt(simTime() + exponential(delay), msg);
+}
+void Node::selfMessageDuplicate(Message_Base *msg,double delay){
+    double duplicationDelay = par("DuplicationDelay").doubleValue();
+    Message_Base *duplicatedMessage = msg->dup();
+    msg->setType(1);
+    duplicatedMessage->setType(2);
+    selfMessageDelay(msg,delay);
+    selfMessageDelay(duplicatedMessage,delay+duplicationDelay);
+}
 
 
 
