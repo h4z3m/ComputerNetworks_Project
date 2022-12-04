@@ -11,6 +11,7 @@
 #include "Message_m.h"
 #include <vector>
 
+
 using namespace omnetpp;
 
 /**
@@ -60,7 +61,6 @@ public:
 
     void printReading(ErrorCodeType_t errorCode);
     ~Node();
-
     char calculateParity(std::string &payload);
     void framing(Message_Base *mptr,std::string &payload, int seq, bool modifiedFlag);
     bool errorDetection(Message_Base *msg);
@@ -68,6 +68,8 @@ public:
     void send_msg(Message_Base *msg ,double TransmissionDelay);
     void control_print(Message_Base *msg , bool lost);
     void Timeout_print(int seqnum);
+    void selfMessageDelay(Message_Base *msg , double delay);
+    void selfMessageDuplicate(Message_Base *msg,double delay);
 };
 
 #endif
