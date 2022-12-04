@@ -1,26 +1,35 @@
 package computernetworks_project;
 
+import computernetworks_project.Coordinator;
+import computernetworks_project.Node;
 @license(LGPL);
 //
 // TODO documentation
 //
 network Network
 {
-    @display("bgb=544,329");
+
+
+        @display("bgb=281,212");
+
+
+
     submodules:
         coordinator: Coordinator {
-            @display("p=270,75");
+            @display("p=133,131;i=block/cogwheel");
         }
-        node0: Node {
-            @display("p=90,184");
+        Node1: Node {
+            @display("p=215,40;i=device/switch,,0");
         }
-        node1: Node {
-            @display("p=441,184");
+        Node0: Node {
+            @display("p=54,40;i=device/switch");
         }
     connections:
-        coordinator.out1 --> node0.coordinator_gate;
-        coordinator.out0 --> node1.coordinator_gate;
-        node0.out_gate --> node1.in_gate;
-        node1.out_gate --> node0.in_gate;
+        coordinator.out1 --> Node1.in_gate;
+        coordinator.out0 --> Node0.in_gate;
+        Node0.out_gate --> Node1.coordinator_gate;
+        Node1.out_gate --> Node0.coordinator_gate;
+
+
 }
 

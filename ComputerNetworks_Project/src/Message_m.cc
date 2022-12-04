@@ -247,12 +247,6 @@ int Message_Base::getAck_no() const
     return this->ack_no;
 }
 
-Message_Base * Message_Base::dup() const  {
-
-    Message_Base * mptr =  new Message_Base();
-    return mptr;
-
-}
 
 void Message_Base::setAck_no(int ack_no)
 {

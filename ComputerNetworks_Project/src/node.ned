@@ -20,6 +20,15 @@ package computernetworks_project;
 //
 simple Node
 {
+        parameters:
+        double ProcessingDelay = default(0.5);
+        double DuplicationDelay = default(0.1);
+        double TransmissionDelay = default(0.3);
+        double ErrorDelay = default(4.0);
+        double WindowSize = default(5);
+        double TimeoutInterval = default(10);
+        double ACKLossProbability = default(0.1);
+
     gates:
         input in_gate;
         output out_gate;
