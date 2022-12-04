@@ -275,7 +275,7 @@ void Node::Timeout_print(int seqnum)
 }
 
 void Node::selfMessageDelay(Message_Base *msg , double delay){
-    scheduleAt(simTime() + exponential(delay), msg);
+    scheduleAt(simTime() + delay, msg);
 }
 void Node::selfMessageDuplicate(Message_Base *msg,double delay){
     double duplicationDelay = par("DuplicationDelay").doubleValue();
