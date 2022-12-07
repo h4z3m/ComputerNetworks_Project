@@ -18,7 +18,7 @@ void Node::openOutputFile() {
 void Node::initialize() {
 
 //    // Open output file
-   // openOutputFile();
+    // openOutputFile();
 //
 //    // TODO - Generated method body
 //    // TESTING READ MESSAGES
@@ -59,34 +59,10 @@ void Node::handleMessage(cMessage *msg) {
 //    //TESTING PRINT READING
 //    printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
 
-<<<<<<< Upstream, based on origin/Ali
-    std::vector<ErrorCodeType_t> errorArray;
-    std::vector<std::string> messageArray;
-    std::string fp = "input0.txt";
-    readMessages(fp, errorArray, messageArray);
-    //TESTING MODIFY MESSAGE
-    std::string t = "abcd";
-    //modifyMessage(t);
-    Message_Base *mptr =  new Message_Base();
-    framing(mptr,t,5,1);
-
-    std::cout << mptr->getPayload() << std::endl;
-=======
-// Get the gate name
+    // Get the gate name
     cGate *msgArrivalGate = msg->getArrivalGate();
     std::string gateName = msgArrivalGate->getName();
->>>>>>> 4c43ce9 - Added logic to decide sender/receiver - Added logic to decide message gate
 
-<<<<<<< Upstream, based on origin/Ali
-    std::cout << errorDetection(mptr) << std::endl;
-    std::cout << par("ErrorDelay").doubleValue()<<std::endl;
-    std::cout << par("TransmissionDelay").doubleValue()<<std::endl;
-    printBeforeTransimission(mptr, ErrorCodeType_t::ErrorCodeType_LossDelay  , 0.5 );
-    send_msg(mptr , 1.0);
-    //selfMessageDuplicate(mptr,1.0);
-    //TESTING PRINT READING
-    printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
-=======
     //[SENDER NODE] Coordinator message indicating the node will be sender
     if (gateName == "coordinator_gate") {
         // I am now the sender foreevaa
@@ -112,7 +88,6 @@ void Node::handleMessage(cMessage *msg) {
     else if (gateName == "in_gate" && NodeType_Receiver == nodeType) {
         //TODO send ACK on received message
     }
->>>>>>> 4c43ce9 - Added logic to decide sender/receiver - Added logic to decide message gate
 
 }
 
@@ -174,25 +149,15 @@ void Node::printReading(ErrorCodeType_t errorCode) {
     outputFile << node_reading << std::endl;
 
 }
-
 char Node::calculateParity(std::string &payload) {
     char parityByte = 0;
     int payloadSize = payload.size();
     for (int i = 0; i < payloadSize; ++i) {
 
-<<<<<<< Upstream, based on origin/Ali
-            parityByte = (parityByte ^ payload[i]);
-        }
-
-        //parityByte ^= (payloadSize + 2)^(0);
-
-        return parityByte;
-=======
         parityByte = (parityByte ^ payload[i]);
->>>>>>> 4c43ce9 - Added logic to decide sender/receiver - Added logic to decide message gate
     }
 
-    parityByte ^= (payloadSize + 2) ^ (0);
+    //parityByte ^= (payloadSize + 2)^(0);
 
     return parityByte;
 }
@@ -234,112 +199,112 @@ std::string Node::get_current_dir() {
     return current_working_dir;
 }
 
-
 ////////////gilany////////////////////////////
 
-bool  Node::errorDetection(Message_Base *msg){
+bool Node::errorDetection(Message_Base *msg) {
 
     std::vector<std::bitset<8> > vbitset;
 //    vbitset.push_back(msg->getHeader());
 
     std::string PayLoad = msg->getPayload();
 
-
-    for (int i = 0;i<PayLoad.size();i++)
-    {
-    vbitset.push_back(PayLoad[i]);
+    for (int i = 0; i < PayLoad.size(); i++) {
+        vbitset.push_back(PayLoad[i]);
     }
     std::bitset<8> trailer_bits = msg->getTrailer();
     std::bitset<8> check(0);
 
-        for (int i = 0;i<vbitset.size();i++)
-        {
-            check = check^vbitset[i];
-        }
+    for (int i = 0; i < vbitset.size(); i++) {
+        check = check ^ vbitset[i];
+    }
 
+    check = check ^ trailer_bits;
 
-
-        check = check^trailer_bits;
-
-
-        if(check==0)
-        {
-            return true;
-        }
-        else{
-            return false;
-        }
+    if (check == 0) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
-void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , double ErrorDelay){
+void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input,
+        double ErrorDelay) {
 
-    //TODO get the correct node id
-    //TODO get the correct duplicate version
+//TODO get the correct node id
+//TODO get the correct duplicate version
     std::bitset<8> trailer_bits = msg->getTrailer();
     std::bitset<4> code(input);
 
-
     std::string lost = "No";
-    if(code[2] == 1){
+    if (code[2] == 1) {
         lost = "Yes";
     }
 
     float delay = 0;
-    if(code[0] == 1){
+    if (code[0] == 1) {
         delay = ErrorDelay;
     }
 
-    std::string line_to_print = "At time [" + simTime().str() + "] Node[" + this->getName()[4] +"] sent frame with seq_num=["+std::to_string(msg->getHeader())+"], and payload=["+msg->getPayload()+"], and trailer =["+trailer_bits.to_string()+"] ,Lost ["+lost+"], Duplicate ["+std::to_string(msg->getType())+"], Delay ["+std::to_string(delay)+"].\n";
-    std::cout<<line_to_print<<std::endl;
+    std::string line_to_print = "At time [" + simTime().str() + "] Node["
+            + this->getName()[4] + "] sent frame with seq_num=["
+            + std::to_string(msg->getHeader()) + "], and payload=["
+            + msg->getPayload() + "], and trailer =[" + trailer_bits.to_string()
+            + "] ,Lost [" + lost + "], Duplicate ["
+            + std::to_string(msg->getType()) + "], Delay ["
+            + std::to_string(delay) + "].\n";
+    std::cout << line_to_print << std::endl;
     outputFile << line_to_print << std::endl;
 }
 
-void Node::send_msg(Message_Base *msg ,double TransmissionDelay)
-{
+void Node::send_msg(Message_Base *msg, double TransmissionDelay) {
     msg->setType(0);
 
-    sendDelayed(msg, TransmissionDelay , "out_gate");
+    sendDelayed(msg, TransmissionDelay, "out_gate");
 }
 
 ////////////gilany////////////////////////////
 
-
-void Node::control_print(Message_Base *msg , bool lost)
-{
-    double time_after_processing= simTime().dbl()+par("ProcessingDelay").doubleValue();
+void Node::control_print(Message_Base *msg, bool lost) {
+    double time_after_processing = simTime().dbl()
+            + par("ProcessingDelay").doubleValue();
     std::string ack;
-    std::string loss = (lost)?"Yes":"No";
-            if(msg->getType() == 2){ack = "NACK";}
-            else if (msg->getType() == 1){ack = "ACK";}
-            else{/*nothing*/}
+    std::string loss = (lost) ? "Yes" : "No";
+    if (msg->getType() == 2) {
+        ack = "NACK";
+    } else if (msg->getType() == 1) {
+        ack = "ACK";
+    } else {/*nothing*/
+    }
 
-    std::string line_to_print = "At time ["+ std::to_string(time_after_processing)+", Node [" + this->getName()[4]+"] Sending ["+std::to_string(msg->getHeader())+"] with number["+ + "], loss ["+loss+"]\n" ;
-       std::cout<<line_to_print<<std::endl;
-       outputFile << line_to_print << std::endl;
-
+    std::string line_to_print = "At time ["
+            + std::to_string(time_after_processing) + ", Node ["
+            + this->getName()[4] + "] Sending ["
+            + std::to_string(msg->getHeader()) + "] with number[" + +"], loss ["
+            + loss + "]\n";
+    std::cout << line_to_print << std::endl;
+    outputFile << line_to_print << std::endl;
 
 }
-void Node::Timeout_print(int seqnum)
-{
+void Node::Timeout_print(int seqnum) {
 
-    std::string line_to_print = "Time out event at time ["+ simTime().str()+", at Node [" + this->getName()[4]+"] for frame with seq_num=["+std::to_string(seqnum)+"]; \n" ;
-       std::cout<<line_to_print<<std::endl;
-       outputFile << line_to_print << std::endl;
+    std::string line_to_print = "Time out event at time [" + simTime().str()
+            + ", at Node [" + this->getName()[4] + "] for frame with seq_num=["
+            + std::to_string(seqnum) + "]; \n";
+    std::cout << line_to_print << std::endl;
+    outputFile << line_to_print << std::endl;
 }
 
-void Node::selfMessageDelay(Message_Base *msg , double delay){
+void Node::selfMessageDelay(Message_Base *msg, double delay) {
     scheduleAt(simTime() + delay, msg);
 }
-void Node::selfMessageDuplicate(Message_Base *msg,double delay){
+void Node::selfMessageDuplicate(Message_Base *msg, double delay) {
     double duplicationDelay = par("DuplicationDelay").doubleValue();
     Message_Base *duplicatedMessage = msg->dup();
     msg->setType(1);
     duplicatedMessage->setType(2);
-    selfMessageDelay(msg,delay);
-    selfMessageDelay(duplicatedMessage,delay+duplicationDelay);
+    selfMessageDelay(msg, delay);
+    selfMessageDelay(duplicatedMessage, delay + duplicationDelay);
 }
-
-
 
 Node::~Node() {
     outputFile.close();

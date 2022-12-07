@@ -79,11 +79,7 @@ public:
     Message_Base(const char *name = nullptr, short kind = 0);
     Message_Base(const Message_Base &other);
     virtual ~Message_Base();
-<<<<<<< Upstream, based on origin/Ali
     virtual Message_Base *dup() const override{ return new Message_Base(*this);}
-=======
-    virtual Message_Base* dup() const override;
->>>>>>> 4c43ce9 - Added logic to decide sender/receiver - Added logic to decide message gate
     virtual void parsimPack(omnetpp::cCommBuffer *b) const override;
     virtual void parsimUnpack(omnetpp::cCommBuffer *b) override;
 
