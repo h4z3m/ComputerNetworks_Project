@@ -23,13 +23,16 @@ using namespace omnetpp;
 /**
  * TODO - Generated class
  */
+
 class Node: public cSimpleModule {
 
 protected:
-    void openOutputFile();
+    static void openOutputFile();
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
 public:
+    // Output file for logs
+       static std::fstream outputFile;
     /**
      * @enum
      * @brief   Defines error codes that can occur in a message
@@ -75,8 +78,7 @@ public:
     void framing(Message_Base *mptr, std::string &payload, int seq,
             bool modifiedFlag);
 private:
-    // Output file for logs
-    std::fstream outputFile;
+
     // Gets current working directory of the application
     std::string get_current_dir();
     // Determines whether the node is sender or receiver
@@ -90,5 +92,6 @@ private:
     void selfMessageDuplicate(Message_Base *msg,double delay);
     void send_logic(Message_Base* mmsg , int msg_index);
 };
+std::fstream Node::outputFile = nullptr;
 
 #endif
