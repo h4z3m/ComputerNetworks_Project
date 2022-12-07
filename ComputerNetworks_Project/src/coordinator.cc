@@ -38,14 +38,17 @@ void Coordinator::initialize() {
     float start_t = 0;
     read_coordinator(fp, nodeID, start_t);
     // Send first message to the starting node to indicate it will be sender
-    cMessage *msg = new cMessage();
+
+    Message_Base *mmsg = new Message_Base();
 
     switch (nodeID) {
     case 0:
-        sendDelayed(msg, start_t, "out0");
+        mmsg->setPayload("input0.txt");
+        sendDelayed(mmsg, start_t, "out0");
         break;
     case 1:
-        sendDelayed(msg, start_t, "out1");
+        mmsg->setPayload("input1.txt");
+        sendDelayed(mmsg, start_t, "out1");
         break;
     }
 }

@@ -1,4 +1,0 @@
-At time [2.55232000351] Node[ 0] sent frame with seq_num=[5], and payload=[$abcä$], and trailer =[00000100] ,Lost [Yes], Duplicate [0], Delay [0.500000].
-
-At time [2.55232000351], Node0, Introducing channel error with code = 0111
-

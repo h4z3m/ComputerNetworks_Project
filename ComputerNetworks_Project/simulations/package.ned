@@ -15,7 +15,7 @@ network Network
         double ErrorDelay = default(4.0);
         double WindowSize = default(5);
         double TimeoutInterval = default(10);
-        double ACKLossProbability = default(0.1);
+        int ACKLossProbability = default(10);
 
         @display("bgb=281,212");
 
@@ -32,11 +32,9 @@ network Network
             @display("p=54,40;i=device/switch");
         }
     connections:
-        coordinator.out1 --> Node1.in_gate;
-        coordinator.out0 --> Node0.in_gate;
-        Node0.out_gate --> Node1.coordinator_gate;
-        Node1.out_gate --> Node0.coordinator_gate;
-
-
+        coordinator.out0 --> Node0.coordinator_gate;
+        coordinator.out1 --> Node1.coordinator_gate;
+        Node1.out_gate --> Node0.in_gate;
+        Node0.out_gate --> Node1.in_gate;
 }
 

@@ -74,7 +74,31 @@ protected:
 
 public:
 
+    /**
+     * @enum
+     * @brief   Defines error codes that can occur in a message
+     *
+     */
+    typedef enum {
+        // [Modification, Loss, Duplication, Delay]
+        ErrorCodeType_NoError = 0b0000, /**< No error */
+        ErrorCodeType_Delay = 0b0001, /**< Delay only */
+        ErrorCodeType_Duplication = 0b0010, /**< Duplication only*/
+        ErrorCodeType_Dup_Delay = 0b0011, /**< Duplication & delay */
+        ErrorCodeType_Loss = 0b0100, /**< Loss only */
+        ErrorCodeType_LossDelay = 0b0101, /**< Loss & delay */
+        ErrorCodeType_LossDup = 0b0110, /**< Loss & duplication */
+        ErrorCodeType_LossDupDelay = 0b0111,/**< Loss, duplication & delay */
+        ErrorCodeType_Modification = 0b1000,/**< Modification only */
+        ErrorCodeType_ModDelay = 0b1001, /**< Modification & delay */
+        ErrorCodeType_ModDup = 0b1010, /**< Modification & duplication*/
+        ErrorCodeType_ModDupDelay = 0b1011, /**< Modification, duplication & delay */
+        ErrorCodeType_ModLoss = 0b1100, /**< Modification & loss */
+        ErrorCodeType_ModLossDelay = 0b1101,/**< Modification, loss, & delay */
+        ErrorCodeType_ModLossDup = 0b1110, /**< Modification, doss & duplication */
+        ErrorCodeType_AllErrors = 0b1111, /**< All 4 errors */
 
+    } ErrorCodeType_t;
     // make constructors protected to avoid instantiation
     Message_Base(const char *name = nullptr, short kind = 0);
     Message_Base(const Message_Base &other);

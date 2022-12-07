@@ -8,8 +8,14 @@
 #include <sstream>
 #include <fstream>
 #include <direct.h>
+#include <time.h>
 #include "Message_m.h"
 #include <vector>
+
+#define Delay 0
+#define Dup 1
+#define Loss 2
+#define Modification 3
 
 
 using namespace omnetpp;
@@ -53,6 +59,11 @@ public:
     typedef enum {
         NodeType_Sender, NodeType_Receiver
     } NodeType_t;
+    typedef enum {
+        Data = 0, ACK = 1 , NACK = 2, To_Send = 3, timeout = 4
+    } MsgType_t;
+
+
     void readMessages(std::string &fileName,
             std::vector<ErrorCodeType_t> &errorArray,
             std::vector<std::string> &messageArray);
@@ -71,12 +82,13 @@ private:
     // Determines whether the node is sender or receiver
     NodeType_t nodeType = NodeType_Receiver;
     bool errorDetection(Message_Base *msg);
-    void printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , double ErrorDelay);
-    void send_msg(Message_Base *msg ,double TransmissionDelay);
+    void printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input);
+    void send_msg(Message_Base *msg);
     void control_print(Message_Base *msg , bool lost);
     void Timeout_print(int seqnum);
     void selfMessageDelay(Message_Base *msg , double delay);
     void selfMessageDuplicate(Message_Base *msg,double delay);
+    void send_logic(Message_Base* mmsg , int msg_index);
 };
 
 #endif

@@ -4,6 +4,15 @@
 
 Define_Module(Node);
 
+static int base = 0;
+static int next_frame_to_send = 0;
+//static int frame_expected = 0;
+static int control_frame_expected = 0;
+
+static std::vector<Node::ErrorCodeType_t> errorArray;
+static std::vector<std::string> messageArray;
+static int size;
+
 void Node::openOutputFile() {
 
     outputFile.open("output.txt", std::ios::out);
@@ -37,10 +46,10 @@ void Node::initialize() {
 }
 
 void Node::handleMessage(cMessage *msg) {
+    Message_Base *mmsg = check_and_cast<Message_Base*>(msg);
     // TODO - Generated method body
 
     // Open output file
-    openOutputFile();
 
 //    // TODO - Generated method body
 //    // TESTING READ MESSAGES
@@ -60,33 +69,112 @@ void Node::handleMessage(cMessage *msg) {
 //    printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
 
     // Get the gate name
-    cGate *msgArrivalGate = msg->getArrivalGate();
-    std::string gateName = msgArrivalGate->getName();
 
     //[SENDER NODE] Coordinator message indicating the node will be sender
-    if (gateName == "coordinator_gate") {
-        // I am now the sender foreevaa
-        nodeType = NodeType_Sender;
 
-        //TODO Start Go back N protocol here
+    if (msg->isSelfMessage() && NodeType_Sender == nodeType) {
+        MsgType_t ss = (MsgType_t) mmsg->getType();
+        switch (ss) {
+        case MsgType_t::To_Send: //start sending msg
+        {
+            scheduleAfter(par("ProcessingDelay").doubleValue(), mmsg);
 
-    }
-    //[SENDER NODE] Self message for timeout or ACK
-    else if (gateName == "in_gate" && NodeType_Sender == nodeType) {
+            int limit =
+                    ((par("WindowSize").doubleValue() + base) > size) ?
+                            size : par("WindowSize").doubleValue() + base;
+            if (next_frame_to_send >= base && next_frame_to_send < limit) {
+                send_logic(mmsg, next_frame_to_send);
+                Message_Base *duplicatedMessage = mmsg->dup();
+                duplicatedMessage->setType(MsgType_t::timeout);
+                scheduleAfter(par("TimeoutInterval").doubleValue(),
+                        duplicatedMessage);
+                next_frame_to_send++;
+            }
 
-        // Timeout message
-        if (msg->isSelfMessage()) {
-            //TODO decide which frames to re-send
+            break;
         }
-        // ACK/NACK from receiver
-        else {
-            //TODO advance the window based on ACK number
+        case MsgType_t::timeout: //timeout_happened to be send
+        {
+            if (mmsg->getHeader() == base) {
+                Timeout_print(mmsg->getHeader());
+                next_frame_to_send = base + 1;
+                ////////////////////
+                //Remove All events
+                cFutureEventSet *heap =
+                        cSimulation::getActiveSimulation()->getFES();
+                heap->clear();
+                /////////////////
+                Message_Base *nmsg = new Message_Base();
+                framing(mmsg, messageArray[base], base, false);
+                send_msg(mmsg);
+                nmsg->setType(MsgType_t::To_Send);
+                scheduleAfter(par("ProcessingDelay").doubleValue(), nmsg);
+            }
+
+            break;
+        }
+        default: {
+            std::bitset<4> tmp_bits(errorArray[mmsg->getHeader()]);
+            printBeforeTransimission(mmsg, errorArray[mmsg->getHeader()]);
+            if (tmp_bits[Loss] == 0) {
+                send_msg(mmsg);
+            }
+        }
+        }
+    }
+
+    else {
+
+        cGate *msgArrivalGate = msg->getArrivalGate();
+        std::string gateName = msgArrivalGate->getName();
+
+        if (gateName == "coordinator_gate") {
+            // I am now the sender foreevaa
+            nodeType = NodeType_Sender;
+            openOutputFile();
+            base = 0;
+            next_frame_to_send = 0;
+
+            std::string fp = mmsg->getPayload();
+            readMessages(fp, errorArray, messageArray);
+            size = messageArray.size();
+            // send_logic(mmsg , next_frame_to_send);
+            mmsg->setType(3);
+            scheduleAfter(par("ProcessingDelay").doubleValue(), mmsg);
+            //TODO Start Go back N protocol here
+
+        }
+        //[SENDER NODE] Self message for timeout or ACK
+
+        else if (gateName == "in_gate" && NodeType_Sender == nodeType) {
+            //TODO recieve ACK/NACK
+            if (mmsg->getHeader() == base) {
+                base++;
+            }
+        } else if (gateName == "in_gate" && NodeType_Receiver == nodeType) {
+            //[RECEIVER NODE] New message for receiver
+            if (mmsg->getHeader() == control_frame_expected) {
+                srand(time(0));
+                if (errorDetection(mmsg)) {
+                    mmsg->setType(MsgType_t::NACK);
+                } else {
+                    mmsg->setType(MsgType_t::ACK);
+                }
+                int loss_prob = rand() % 100;
+                bool lost_tt =
+                        (loss_prob < par("ACKLossProbability").intValue());
+                control_print(mmsg, lost_tt);
+                if (!lost_tt) {
+                    sendDelayed(mmsg,
+                            par("TransmissionDelay").doubleValue()
+                                    + par("ProcessingDelay").doubleValue(),
+                            "out_gate");
+                } else {
+                    cancelAndDelete(msg);
+                }
+            }
         }
 
-    }
-    //[RECEIVER NODE] New message for receiver
-    else if (gateName == "in_gate" && NodeType_Receiver == nodeType) {
-        //TODO send ACK on received message
     }
 
 }
@@ -95,12 +183,12 @@ void Node::readMessages(std::string &fileName,
         std::vector<ErrorCodeType_t> &errorArray,
         std::vector<std::string> &messageArray) {
 
-    // Open the file
+// Open the file
     std::ifstream node_file;
 
     node_file.open(get_current_dir() + "\\" + fileName, std::ios::in);
 
-    // Return if file was not opened
+// Return if file was not opened
     if (!node_file.is_open()) {
         std::cerr << "[NODE] Error opening file." << std::endl;
         return;
@@ -122,8 +210,9 @@ void Node::readMessages(std::string &fileName,
             messageArray.push_back(tmp_msg);
             tmp_msg.clear();
             s_stream.clear();
-            node_file.close();
+
         }
+        node_file.close();
 
     }
 
@@ -157,7 +246,7 @@ char Node::calculateParity(std::string &payload) {
         parityByte = (parityByte ^ payload[i]);
     }
 
-    //parityByte ^= (payloadSize + 2)^(0);
+//parityByte ^= (payloadSize + 2)^(0);
 
     return parityByte;
 }
@@ -221,14 +310,13 @@ bool Node::errorDetection(Message_Base *msg) {
     check = check ^ trailer_bits;
 
     if (check == 0) {
-        return true;
-    } else {
         return false;
+    } else {
+        return true;
     }
 }
 
-void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input,
-        double ErrorDelay) {
+void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input) {
 
 //TODO get the correct node id
 //TODO get the correct duplicate version
@@ -242,7 +330,7 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input,
 
     float delay = 0;
     if (code[0] == 1) {
-        delay = ErrorDelay;
+        delay = par("ErrorDelay").doubleValue();
     }
 
     std::string line_to_print = "At time [" + simTime().str() + "] Node["
@@ -252,14 +340,15 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input,
             + "] ,Lost [" + lost + "], Duplicate ["
             + std::to_string(msg->getType()) + "], Delay ["
             + std::to_string(delay) + "].\n";
+
     std::cout << line_to_print << std::endl;
     outputFile << line_to_print << std::endl;
 }
 
-void Node::send_msg(Message_Base *msg, double TransmissionDelay) {
+void Node::send_msg(Message_Base *msg) {
     msg->setType(0);
 
-    sendDelayed(msg, TransmissionDelay, "out_gate");
+    sendDelayed(msg, par("TransmissionDelay").doubleValue(), "out_gate");
 }
 
 ////////////gilany////////////////////////////
@@ -305,7 +394,19 @@ void Node::selfMessageDuplicate(Message_Base *msg, double delay) {
     selfMessageDelay(msg, delay);
     selfMessageDelay(duplicatedMessage, delay + duplicationDelay);
 }
+void Node::send_logic(Message_Base *mmsg, int msg_index) {
+    std::bitset<4> tmp_bits(errorArray[msg_index]);
+    framing(mmsg, messageArray[msg_index], msg_index, tmp_bits[Modification]);
+    int delay_time =
+            (tmp_bits[Delay] == 1) ? par("ErrorDelay").doubleValue() : 0;
+    if (tmp_bits[Dup] == 1) {
 
+        selfMessageDuplicate(mmsg, delay_time);
+    } else {
+        selfMessageDelay(mmsg, delay_time);
+    }
+
+}
 Node::~Node() {
     outputFile.close();
 }
