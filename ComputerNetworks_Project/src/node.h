@@ -18,10 +18,6 @@ using namespace omnetpp;
  * TODO - Generated class
  */
 class Node: public cSimpleModule {
-private:
-
-    std::fstream outputFile;
-    std::string get_current_dir();
 
 protected:
     void openOutputFile();
@@ -54,6 +50,9 @@ public:
 
     } ErrorCodeType_t;
 
+    typedef enum {
+        NodeType_Sender, NodeType_Receiver
+    } NodeType_t;
     void readMessages(std::string &fileName,
             std::vector<ErrorCodeType_t> &errorArray,
             std::vector<std::string> &messageArray);
@@ -62,7 +61,15 @@ public:
     void printReading(ErrorCodeType_t errorCode);
     ~Node();
     char calculateParity(std::string &payload);
-    void framing(Message_Base *mptr,std::string &payload, int seq, bool modifiedFlag);
+    void framing(Message_Base *mptr, std::string &payload, int seq,
+            bool modifiedFlag);
+private:
+    // Output file for logs
+    std::fstream outputFile;
+    // Gets current working directory of the application
+    std::string get_current_dir();
+    // Determines whether the node is sender or receiver
+    NodeType_t nodeType = NodeType_Receiver;
     bool errorDetection(Message_Base *msg);
     void printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input , double ErrorDelay);
     void send_msg(Message_Base *msg ,double TransmissionDelay);

@@ -42,9 +42,24 @@ void Node::handleMessage(cMessage *msg) {
     // Open output file
     openOutputFile();
 
-    // TODO - Generated method body
-    // TESTING READ MESSAGES
+//    // TODO - Generated method body
+//    // TESTING READ MESSAGES
+//
+//    std::vector<ErrorCodeType_t> errorArray;
+//    std::vector<std::string> messageArray;
+//    std::string fp = "input0.txt";
+//    readMessages(fp, errorArray, messageArray);
+//    //TESTING MODIFY MESSAGE
+//    std::string t = "a$bc/d";
+//    //modifyMessage(t);
+//    Message_Base *mptr =  new Message_Base();
+//    framing(mptr,t,5,1);
+//    std::cout << mptr->getPayload() << std::endl;
+//
+//    //TESTING PRINT READING
+//    printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
 
+<<<<<<< Upstream, based on origin/Ali
     std::vector<ErrorCodeType_t> errorArray;
     std::vector<std::string> messageArray;
     std::string fp = "input0.txt";
@@ -56,7 +71,13 @@ void Node::handleMessage(cMessage *msg) {
     framing(mptr,t,5,1);
 
     std::cout << mptr->getPayload() << std::endl;
+=======
+// Get the gate name
+    cGate *msgArrivalGate = msg->getArrivalGate();
+    std::string gateName = msgArrivalGate->getName();
+>>>>>>> 4c43ce9 - Added logic to decide sender/receiver - Added logic to decide message gate
 
+<<<<<<< Upstream, based on origin/Ali
     std::cout << errorDetection(mptr) << std::endl;
     std::cout << par("ErrorDelay").doubleValue()<<std::endl;
     std::cout << par("TransmissionDelay").doubleValue()<<std::endl;
@@ -65,17 +86,41 @@ void Node::handleMessage(cMessage *msg) {
     //selfMessageDuplicate(mptr,1.0);
     //TESTING PRINT READING
     printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
+=======
+    //[SENDER NODE] Coordinator message indicating the node will be sender
+    if (gateName == "coordinator_gate") {
+        // I am now the sender foreevaa
+        nodeType = NodeType_Sender;
+
+        //TODO Start Go back N protocol here
+
+    }
+    //[SENDER NODE] Self message for timeout or ACK
+    else if (gateName == "in_gate" && NodeType_Sender == nodeType) {
+
+        // Timeout message
+        if (msg->isSelfMessage()) {
+            //TODO decide which frames to re-send
+        }
+        // ACK/NACK from receiver
+        else {
+            //TODO advance the window based on ACK number
+        }
+
+    }
+    //[RECEIVER NODE] New message for receiver
+    else if (gateName == "in_gate" && NodeType_Receiver == nodeType) {
+        //TODO send ACK on received message
+    }
+>>>>>>> 4c43ce9 - Added logic to decide sender/receiver - Added logic to decide message gate
 
 }
-
-
 
 void Node::readMessages(std::string &fileName,
         std::vector<ErrorCodeType_t> &errorArray,
         std::vector<std::string> &messageArray) {
 
     // Open the file
-
     std::ifstream node_file;
 
     node_file.open(get_current_dir() + "\\" + fileName, std::ios::in);
@@ -124,47 +169,55 @@ void Node::printReading(ErrorCodeType_t errorCode) {
 
     std::cout << node_reading;
 
-
     std::cout << node_reading << std::endl;
 
     outputFile << node_reading << std::endl;
 
-
 }
 
 char Node::calculateParity(std::string &payload) {
-        char parityByte = 0;
-        int payloadSize = payload.size();
-        for (int i = 0; i < payloadSize; ++i) {
+    char parityByte = 0;
+    int payloadSize = payload.size();
+    for (int i = 0; i < payloadSize; ++i) {
 
+<<<<<<< Upstream, based on origin/Ali
             parityByte = (parityByte ^ payload[i]);
         }
 
         //parityByte ^= (payloadSize + 2)^(0);
 
         return parityByte;
+=======
+        parityByte = (parityByte ^ payload[i]);
+>>>>>>> 4c43ce9 - Added logic to decide sender/receiver - Added logic to decide message gate
     }
 
-void Node::framing(Message_Base *mptr, std::string &payload, int seq, bool modificationFlag){
-    std::string modified = "$";
-    int payloadSize =payload.size();
+    parityByte ^= (payloadSize + 2) ^ (0);
 
-    for (int i = 0; i < payloadSize; i++){
+    return parityByte;
+}
+
+void Node::framing(Message_Base *mptr, std::string &payload, int seq,
+        bool modificationFlag) {
+    std::string modified = "$";
+    int payloadSize = payload.size();
+
+    for (int i = 0; i < payloadSize; i++) {
         char c = payload[i];
 
-        if(c== '$'){
+        if (c == '$') {
             modified += "/$";
-        } else if(c== '/'){
+        } else if (c == '/') {
             modified += "//";
-        } else{
+        } else {
             modified += payload[i];
         }
 
     }
-    modified +="$";
+    modified += "$";
 
     char parity = calculateParity(modified);
-    if(modificationFlag == 1)
+    if (modificationFlag == 1)
         modifyMessage(modified);
 
     mptr->setPayload(modified.c_str());
