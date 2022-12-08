@@ -27,7 +27,7 @@ void Node::openOutputFile() {
 void Node::initialize() {
 
 //    // Open output file
-    openOutputFile();
+
 //
 //    // TODO - Generated method body
 //    // TESTING READ MESSAGES
@@ -73,22 +73,21 @@ void Node::handleMessage(cMessage *msg) {
 //[SENDER NODE] Coordinator message indicating the node will be sender
 
     if (msg->isSelfMessage() && NodeType_Sender == nodeType) {
-        if (next_frame_to_send == size) {
+        if (next_frame_to_send >= size) {
             ////////////////////
             //Remove All events
             cFutureEventSet *heap =
                     cSimulation::getActiveSimulation()->getFES();
             heap->clear();
+
+            printToFile();
             return;
             /////////////////
         }
-        std::cout << "AAAAAAAAAAAAA " << mmsg->getType() << std::endl;
         MsgType_t ss = static_cast<MsgType_t>(mmsg->getType());
         switch (ss) {
         case MsgType_t::To_Send: //start sending msg
         {
-
-            std::cout << "BBBBBBBBBBB " << mmsg->getType() << std::endl;
 
             //cancelEvent(mmsg);
             scheduleAt(simTime() + par("ProcessingDelay").doubleValue(), mmsg);
@@ -250,8 +249,8 @@ void Node::printReading(ErrorCodeType_t errorCode) {
             + std::bitset<4>(errorCode).to_string() + "\n";
 
     std::cout << node_reading << std::endl;
-
-    outputFile << node_reading << std::endl;
+    outputBuffer.push_back(node_reading);
+    //outputFile << node_reading << std::endl;
 
 }
 char Node::calculateParity(std::string &payload) {
@@ -358,7 +357,8 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input) {
             + std::to_string(delay) + "].\n";
 
     std::cout << line_to_print << std::endl;
-    outputFile << line_to_print << std::endl;
+    outputBuffer.push_back(line_to_print);
+    //outputFile << line_to_print << std::endl;
 }
 
 void Node::send_msg(Message_Base *msg) {
@@ -384,10 +384,12 @@ void Node::control_print(Message_Base *msg, bool lost) {
     std::string line_to_print = "At time ["
             + std::to_string(time_after_processing) + ", Node ["
             + this->getName()[4] + "] Sending ["
-            + std::to_string(msg->getHeader()) + "] with number[" + +"], loss ["
-            + loss + "]\n";
+            + std::to_string(msg->getHeader()) + "] with number["
+            + std::to_string(msg->getAck_no()) + "], loss [" + loss + "]\n";
+
     std::cout << line_to_print << std::endl;
-    outputFile << line_to_print << std::endl;
+    outputBuffer.push_back(line_to_print);
+    // outputFile << line_to_print << std::endl;
 
 }
 void Node::Timeout_print(int seqnum) {
@@ -425,6 +427,15 @@ void Node::send_logic(Message_Base *mmsg, int msg_index) {
     }
 
 }
-Node::~Node() {
+void Node::printToFile() {
+    openOutputFile();
+    for (auto it : outputBuffer) {
+        outputFile << it << std::endl;
+    }
     outputFile.close();
+
+}
+
+Node::~Node() {
+
 }
