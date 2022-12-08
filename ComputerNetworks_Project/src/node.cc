@@ -27,7 +27,7 @@ void Node::openOutputFile() {
 void Node::initialize() {
 
 //    // Open output file
-    // openOutputFile();
+    openOutputFile();
 //
 //    // TODO - Generated method body
 //    // TESTING READ MESSAGES
@@ -68,23 +68,39 @@ void Node::handleMessage(cMessage *msg) {
 //    //TESTING PRINT READING
 //    printReading(ErrorCodeType_t::ErrorCodeType_LossDupDelay);
 
-    // Get the gate name
+// Get the gate name
 
-    //[SENDER NODE] Coordinator message indicating the node will be sender
+//[SENDER NODE] Coordinator message indicating the node will be sender
 
     if (msg->isSelfMessage() && NodeType_Sender == nodeType) {
-        MsgType_t ss = (MsgType_t) mmsg->getType();
+        if (next_frame_to_send == size) {
+            ////////////////////
+            //Remove All events
+            cFutureEventSet *heap =
+                    cSimulation::getActiveSimulation()->getFES();
+            heap->clear();
+            return;
+            /////////////////
+        }
+        std::cout << "AAAAAAAAAAAAA " << mmsg->getType() << std::endl;
+        MsgType_t ss = static_cast<MsgType_t>(mmsg->getType());
         switch (ss) {
         case MsgType_t::To_Send: //start sending msg
         {
-            scheduleAfter(par("ProcessingDelay").doubleValue(), mmsg);
+
+            std::cout << "BBBBBBBBBBB " << mmsg->getType() << std::endl;
+
+            //cancelEvent(mmsg);
+            scheduleAt(simTime() + par("ProcessingDelay").doubleValue(), mmsg);
 
             int limit =
                     ((par("WindowSize").doubleValue() + base) > size) ?
                             size : par("WindowSize").doubleValue() + base;
             if (next_frame_to_send >= base && next_frame_to_send < limit) {
-                send_logic(mmsg, next_frame_to_send);
-                Message_Base *duplicatedMessage = mmsg->dup();
+                Message_Base *newmsg = new Message_Base();
+                send_logic(newmsg, next_frame_to_send);
+                //Message_Base *duplicatedMessage = mmsg->dup();
+                Message_Base *duplicatedMessage = new Message_Base(*newmsg);
                 duplicatedMessage->setType(MsgType_t::timeout);
                 scheduleAfter(par("TimeoutInterval").doubleValue(),
                         duplicatedMessage);
@@ -108,6 +124,7 @@ void Node::handleMessage(cMessage *msg) {
                 framing(mmsg, messageArray[base], base, false);
                 send_msg(mmsg);
                 nmsg->setType(MsgType_t::To_Send);
+
                 scheduleAfter(par("ProcessingDelay").doubleValue(), nmsg);
             }
 
@@ -131,7 +148,6 @@ void Node::handleMessage(cMessage *msg) {
         if (gateName == "coordinator_gate") {
             // I am now the sender foreevaa
             nodeType = NodeType_Sender;
-            openOutputFile();
             base = 0;
             next_frame_to_send = 0;
 
@@ -139,8 +155,8 @@ void Node::handleMessage(cMessage *msg) {
             readMessages(fp, errorArray, messageArray);
             size = messageArray.size();
             // send_logic(mmsg , next_frame_to_send);
-            mmsg->setType(3);
-            scheduleAfter(par("ProcessingDelay").doubleValue(), mmsg);
+            mmsg->setType(MsgType_t::To_Send);
+            scheduleAt(simTime() + par("ProcessingDelay").doubleValue(), mmsg);
             //TODO Start Go back N protocol here
 
         }
@@ -160,6 +176,7 @@ void Node::handleMessage(cMessage *msg) {
                 } else {
                     mmsg->setType(MsgType_t::ACK);
                 }
+                mmsg->setAck_no(mmsg->getHeader() + 1);
                 int loss_prob = rand() % 100;
                 bool lost_tt =
                         (loss_prob < par("ACKLossProbability").intValue());
@@ -172,6 +189,7 @@ void Node::handleMessage(cMessage *msg) {
                 } else {
                     cancelAndDelete(msg);
                 }
+                control_frame_expected++;
             }
         }
 
@@ -230,8 +248,6 @@ void Node::printReading(ErrorCodeType_t errorCode) {
     std::string node_reading = "At time [" + simTime().str() + "], "
             + this->getName() + +", Introducing channel error with code = "
             + std::bitset<4>(errorCode).to_string() + "\n";
-
-    std::cout << node_reading;
 
     std::cout << node_reading << std::endl;
 
@@ -384,11 +400,13 @@ void Node::Timeout_print(int seqnum) {
 }
 
 void Node::selfMessageDelay(Message_Base *msg, double delay) {
+    cancelEvent(msg);
     scheduleAt(simTime() + delay, msg);
 }
 void Node::selfMessageDuplicate(Message_Base *msg, double delay) {
     double duplicationDelay = par("DuplicationDelay").doubleValue();
-    Message_Base *duplicatedMessage = msg->dup();
+    //Message_Base *duplicatedMessage = msg->dup();
+    Message_Base *duplicatedMessage = new Message_Base(*msg);
     msg->setType(1);
     duplicatedMessage->setType(2);
     selfMessageDelay(msg, delay);
