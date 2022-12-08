@@ -17,7 +17,6 @@
 #define Loss 2
 #define Modification 3
 
-
 using namespace omnetpp;
 
 /**
@@ -32,7 +31,8 @@ protected:
     virtual void handleMessage(cMessage *msg) override;
 public:
     // Output file for logs
-       static std::fstream outputFile;
+    static std::fstream outputFile;
+    static std::vector<std::string> outputBuffer;
     /**
      * @enum
      * @brief   Defines error codes that can occur in a message
@@ -63,9 +63,8 @@ public:
         NodeType_Sender, NodeType_Receiver
     } NodeType_t;
     typedef enum {
-        Data = 0, ACK = 1 , NACK = 2, To_Send = 3, timeout = 4
+        Data = 0, ACK = 1, NACK = 2, To_Send = 3, timeout = 4
     } MsgType_t;
-
 
     void readMessages(std::string &fileName,
             std::vector<ErrorCodeType_t> &errorArray,
@@ -86,12 +85,14 @@ private:
     bool errorDetection(Message_Base *msg);
     void printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input);
     void send_msg(Message_Base *msg);
-    void control_print(Message_Base *msg , bool lost);
+    void control_print(Message_Base *msg, bool lost);
     void Timeout_print(int seqnum);
-    void selfMessageDelay(Message_Base *msg , double delay);
-    void selfMessageDuplicate(Message_Base *msg,double delay);
-    void send_logic(Message_Base* mmsg , int msg_index);
+    void selfMessageDelay(Message_Base *msg, double delay);
+    void selfMessageDuplicate(Message_Base *msg, double delay);
+    void send_logic(Message_Base *mmsg, int msg_index);
+    void printToFile();
 };
 std::fstream Node::outputFile = nullptr;
+std::vector<std::string> Node::outputBuffer = { };
 
 #endif
