@@ -11,7 +11,9 @@ static int control_frame_expected = 0;
 
 static std::vector<Node::ErrorCodeType_t> errorArray;
 static std::vector<std::string> messageArray;
-static int size;
+static int size_of_Array;
+static int frame_to_print = 1;
+
 
 void Node::openOutputFile() {
 
@@ -73,7 +75,7 @@ void Node::handleMessage(cMessage *msg) {
 //[SENDER NODE] Coordinator message indicating the node will be sender
 
     if (msg->isSelfMessage() && NodeType_Sender == nodeType) {
-        if (base >= size) {
+        if (base >= size_of_Array) {
             ////////////////////
             //Remove All events
             cFutureEventSet *heap =
@@ -81,6 +83,7 @@ void Node::handleMessage(cMessage *msg) {
             heap->clear();
 
             printToFile();
+            finish();
             return;
             /////////////////
         }
@@ -90,15 +93,25 @@ void Node::handleMessage(cMessage *msg) {
         {
 
             //cancelEvent(mmsg);
-            scheduleAt(simTime() + par("ProcessingDelay").doubleValue(), mmsg);
-            if ((next_frame_to_send + 1) != size) {
-                printReading(errorArray[next_frame_to_send + 1]);
+            if (next_frame_to_send < size_of_Array) {
+                scheduleAt(simTime() + par("ProcessingDelay").doubleValue(), mmsg);
 
             }
+
             int limit =
-                    ((par("WindowSize").doubleValue() + base) > size) ?
-                            size : par("WindowSize").doubleValue() + base;
+                    ((par("WindowSize").doubleValue() + base) > size_of_Array) ?
+                            size_of_Array : par("WindowSize").doubleValue() + base;
             if (next_frame_to_send >= base && next_frame_to_send < limit) {
+
+                if (next_frame_to_send < size_of_Array-1) {
+
+
+                    printReading(errorArray[frame_to_print]);
+
+                }
+
+
+
                 Message_Base *newmsg = new Message_Base();
                 send_logic(newmsg, next_frame_to_send);
                 //Message_Base *duplicatedMessage = mmsg->dup();
@@ -107,6 +120,7 @@ void Node::handleMessage(cMessage *msg) {
                 scheduleAfter(par("TimeoutInterval").doubleValue(),
                         duplicatedMessage);
                 next_frame_to_send++;
+                frame_to_print++;
             }
 
             break;
@@ -116,29 +130,62 @@ void Node::handleMessage(cMessage *msg) {
             if (mmsg->getHeader() == base) {
                 Timeout_print(mmsg->getHeader());
                 next_frame_to_send = base + 1;
+                frame_to_print = base+1;
+                cancelAndDelete(mmsg);
                 ////////////////////
                 //Remove All events
                 cFutureEventSet *heap =
-                        cSimulation::getActiveSimulation()->getFES();
+                cSimulation::getActiveSimulation()->getFES();
                 heap->clear();
                 /////////////////
-                Message_Base *nmsg = new Message_Base();
-                framing(mmsg, messageArray[base], base, false);
-                send_msg(mmsg);
-                nmsg->setType(MsgType_t::To_Send);
 
-                scheduleAfter(par("ProcessingDelay").doubleValue(), nmsg);
+
+
+
+                printReading(errorArray[base]);
+                Message_Base *nmsg = new Message_Base();
+                framing(nmsg, messageArray[base], base, false);
+                nmsg->setType(MsgType_t::Data);
+                sendDelayed(nmsg, par("TransmissionDelay").doubleValue()+par("ProcessingDelay").doubleValue(), "out_gate");
+
+
+                Message_Base *smsg = new Message_Base();
+                smsg->setType(MsgType_t::To_Send);
+                scheduleAfter(2*par("ProcessingDelay").doubleValue(), smsg);
+
+                Message_Base *tmsg = new Message_Base();
+                tmsg->setType(MsgType_t::timeout_print);
+                scheduleAfter(par("ProcessingDelay").doubleValue(), tmsg);
+
+
+
                 Message_Base *timeout = new Message_Base();
                 timeout->setType(MsgType_t::timeout);
-                scheduleAfter(par("TimeoutInterval").doubleValue(), timeout);
+                scheduleAfter(par("TimeoutInterval").doubleValue()+par("ProcessingDelay").doubleValue(), timeout);
 
             }
 
             break;
         }
+        case MsgType_t::timeout_print: //timeout_happened to be send
+               {
+
+                   framing(mmsg, messageArray[base], base, false);
+                   mmsg->setType(MsgType_t::Data);
+                   ErrorCodeType_t ss = ErrorCodeType_NoError;
+                   printBeforeTransimission(mmsg, ss);
+                   if((base +1) <size_of_Array)
+                   {
+                   printReading(errorArray[base+1]);
+                   }
+                  cancelAndDelete(mmsg);
+
+
+               break;
+               }
         default: {
             std::bitset<4> tmp_bits(errorArray[mmsg->getHeader()]);
-            printBeforeTransimission(mmsg, errorArray[mmsg->getHeader()]);
+
             if (tmp_bits[Loss] == 0) {
                 send_msg(mmsg);
             }
@@ -161,10 +208,10 @@ void Node::handleMessage(cMessage *msg) {
             nodeType = NodeType_Sender;
             base = 0;
             next_frame_to_send = 0;
-
+            frame_to_print = 1;
             std::string fp = mmsg->getPayload();
             readMessages(fp, errorArray, messageArray);
-            size = messageArray.size();
+            size_of_Array = messageArray.size();
             // send_logic(mmsg , next_frame_to_send);
             mmsg->setType(MsgType_t::To_Send);
             printReading(errorArray[0]);
@@ -179,6 +226,18 @@ void Node::handleMessage(cMessage *msg) {
             if (mmsg->getHeader() == base) {
                 base++;
             }
+            if (base >= size_of_Array) {
+                        ////////////////////
+                        //Remove All events
+                        cFutureEventSet *heap =
+                                cSimulation::getActiveSimulation()->getFES();
+                        heap->clear();
+
+                        printToFile();
+                        finish();
+                        return;
+                        /////////////////
+                    }
         } else if (gateName == "in_gate" && NodeType_Receiver == nodeType) {
             //[RECEIVER NODE] New message for receiver
             srand(time(0));
@@ -192,6 +251,7 @@ void Node::handleMessage(cMessage *msg) {
             if (mmsg->getHeader() == control_frame_expected) {
                 control_frame_expected++;
             }
+
 
             mmsg->setAck_no(control_frame_expected);
             mmsg->setPayload("");
@@ -264,8 +324,8 @@ void Node::modifyMessage(std::string &payload) {
 
 void Node::printReading(ErrorCodeType_t errorCode) {
 
-    std::string node_reading = "At time [" + simTime().str() + "], "
-            + this->getName() + +", Introducing channel error with code = "
+    std::string node_reading = "At time [" + simTime().str() + "], Node["
+            + this->getName()[4] + +"], Introducing channel error with code = "
             + std::bitset<4>(errorCode).to_string() + "\n";
     static int i =0;
     std::cout << node_reading << "  i = "<<i<<std::endl;
@@ -400,9 +460,9 @@ void Node::control_print(Message_Base *msg, bool lost) {
     } else {/*nothing*/
     }
 
-    std::string line_to_print = "At time [" + simTime().str() + "], Node ["
+    std::string line_to_print = "At time [" + simTime().str() + "], Node["
             + this->getName()[4] + "] Sending [" + ack + "] with number["
-            + std::to_string(msg->getHeader()) + "], loss [" + loss + "]\n";
+            + std::to_string(msg->getAck_no()) + "], loss [" + loss + "]\n";
 
     std::cout << line_to_print << std::endl;
     outputBuffer.push_back(line_to_print);
@@ -412,14 +472,15 @@ void Node::control_print(Message_Base *msg, bool lost) {
 void Node::Timeout_print(int seqnum) {
 
     std::string line_to_print = "Time out event at time [" + simTime().str()
-            + ", at Node [" + this->getName()[4] + "] for frame with seq_num=["
+            + "], at Node [" + this->getName()[4] + "] for frame with seq_num=["
             + std::to_string(seqnum) + "]; \n";
     std::cout << line_to_print << std::endl;
-    outputFile << line_to_print << std::endl;
+    outputBuffer.push_back(line_to_print);
 }
 
 void Node::selfMessageDelay(Message_Base *msg, double delay) {
     cancelEvent(msg);
+    printBeforeTransimission(msg, errorArray[msg->getHeader()]);
     scheduleAt(simTime() + delay, msg);
 }
 void Node::selfMessageDuplicate(Message_Base *msg, double delay) {

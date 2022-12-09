@@ -63,7 +63,7 @@ public:
         NodeType_Sender, NodeType_Receiver
     } NodeType_t;
     typedef enum {
-        Data = 0, ACK = 1, NACK = 2, To_Send = 3, timeout = 4
+        Data = 0, ACK = 1, NACK = 2, To_Send = 3, timeout = 4, timeout_print = 5
     } MsgType_t;
 
     void readMessages(std::string &fileName,
