@@ -15,7 +15,7 @@ static int size;
 
 void Node::openOutputFile() {
 
-    outputFile.open("output.txt", std::ios::out);
+    outputFile.open("output.txt", std::ios::out | std::ios::trunc);
 
     // Return if file was not opened
     if (!outputFile.is_open()) {
@@ -73,7 +73,7 @@ void Node::handleMessage(cMessage *msg) {
 //[SENDER NODE] Coordinator message indicating the node will be sender
 
     if (msg->isSelfMessage() && NodeType_Sender == nodeType) {
-        if (next_frame_to_send >= size) {
+        if (base >= size) {
             ////////////////////
             //Remove All events
             cFutureEventSet *heap =
@@ -91,7 +91,10 @@ void Node::handleMessage(cMessage *msg) {
 
             //cancelEvent(mmsg);
             scheduleAt(simTime() + par("ProcessingDelay").doubleValue(), mmsg);
+            if ((next_frame_to_send + 1) != size) {
+                printReading(errorArray[next_frame_to_send + 1]);
 
+            }
             int limit =
                     ((par("WindowSize").doubleValue() + base) > size) ?
                             size : par("WindowSize").doubleValue() + base;
@@ -125,6 +128,10 @@ void Node::handleMessage(cMessage *msg) {
                 nmsg->setType(MsgType_t::To_Send);
 
                 scheduleAfter(par("ProcessingDelay").doubleValue(), nmsg);
+                Message_Base *timeout = new Message_Base();
+                timeout->setType(MsgType_t::timeout);
+                scheduleAfter(par("TimeoutInterval").doubleValue(), timeout);
+
             }
 
             break;
@@ -139,7 +146,12 @@ void Node::handleMessage(cMessage *msg) {
         }
     }
 
-    else {
+    else if (msg->isSelfMessage() && NodeType_Receiver == nodeType) {
+
+        control_print(mmsg, mmsg->getTrailer());
+        cancelAndDelete(mmsg);
+        return;
+    } else {
 
         cGate *msgArrivalGate = msg->getArrivalGate();
         std::string gateName = msgArrivalGate->getName();
@@ -155,6 +167,7 @@ void Node::handleMessage(cMessage *msg) {
             size = messageArray.size();
             // send_logic(mmsg , next_frame_to_send);
             mmsg->setType(MsgType_t::To_Send);
+            printReading(errorArray[0]);
             scheduleAt(simTime() + par("ProcessingDelay").doubleValue(), mmsg);
             //TODO Start Go back N protocol here
 
@@ -168,28 +181,35 @@ void Node::handleMessage(cMessage *msg) {
             }
         } else if (gateName == "in_gate" && NodeType_Receiver == nodeType) {
             //[RECEIVER NODE] New message for receiver
+            srand(time(0));
+
+            if (errorDetection(mmsg)) {
+                mmsg->setType(MsgType_t::NACK);
+            } else {
+                mmsg->setType(MsgType_t::ACK);
+            }
+
             if (mmsg->getHeader() == control_frame_expected) {
-                srand(time(0));
-                if (errorDetection(mmsg)) {
-                    mmsg->setType(MsgType_t::NACK);
-                } else {
-                    mmsg->setType(MsgType_t::ACK);
-                }
-                mmsg->setAck_no(mmsg->getHeader() + 1);
-                int loss_prob = rand() % 100;
-                bool lost_tt =
-                        (loss_prob < par("ACKLossProbability").intValue());
-                control_print(mmsg, lost_tt);
-                if (!lost_tt) {
-                    sendDelayed(mmsg,
-                            par("TransmissionDelay").doubleValue()
-                                    + par("ProcessingDelay").doubleValue(),
-                            "out_gate");
-                } else {
-                    cancelAndDelete(msg);
-                }
                 control_frame_expected++;
             }
+
+            mmsg->setAck_no(control_frame_expected);
+            mmsg->setPayload("");
+            int loss_prob = rand() % 100;
+            bool lost_tt = (loss_prob < par("ACKLossProbability").intValue());
+
+            if (!lost_tt) {
+                sendDelayed(mmsg,
+                        par("TransmissionDelay").doubleValue()
+                                + par("ProcessingDelay").doubleValue(),
+                        "out_gate");
+            } else {
+                cancelAndDelete(msg);
+            }
+            Message_Base *printSelfMessage = new Message_Base(*mmsg);
+            printSelfMessage->setTrailer(lost_tt);
+            scheduleAfter(par("ProcessingDelay").doubleValue(),
+                    printSelfMessage);
         }
 
     }
@@ -247,10 +267,11 @@ void Node::printReading(ErrorCodeType_t errorCode) {
     std::string node_reading = "At time [" + simTime().str() + "], "
             + this->getName() + +", Introducing channel error with code = "
             + std::bitset<4>(errorCode).to_string() + "\n";
-
-    std::cout << node_reading << std::endl;
+    static int i =0;
+    std::cout << node_reading << "  i = "<<i<<std::endl;
+    i++;
     outputBuffer.push_back(node_reading);
-    //outputFile << node_reading << std::endl;
+//outputFile << node_reading << std::endl;
 
 }
 char Node::calculateParity(std::string &payload) {
@@ -358,7 +379,7 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input) {
 
     std::cout << line_to_print << std::endl;
     outputBuffer.push_back(line_to_print);
-    //outputFile << line_to_print << std::endl;
+//outputFile << line_to_print << std::endl;
 }
 
 void Node::send_msg(Message_Base *msg) {
@@ -370,8 +391,6 @@ void Node::send_msg(Message_Base *msg) {
 ////////////gilany////////////////////////////
 
 void Node::control_print(Message_Base *msg, bool lost) {
-    double time_after_processing = simTime().dbl()
-            + par("ProcessingDelay").doubleValue();
     std::string ack;
     std::string loss = (lost) ? "Yes" : "No";
     if (msg->getType() == 2) {
@@ -381,15 +400,13 @@ void Node::control_print(Message_Base *msg, bool lost) {
     } else {/*nothing*/
     }
 
-    std::string line_to_print = "At time ["
-            + std::to_string(time_after_processing) + ", Node ["
-            + this->getName()[4] + "] Sending ["
-            + std::to_string(msg->getHeader()) + "] with number["
-            + std::to_string(msg->getAck_no()) + "], loss [" + loss + "]\n";
+    std::string line_to_print = "At time [" + simTime().str() + "], Node ["
+            + this->getName()[4] + "] Sending [" + ack + "] with number["
+            + std::to_string(msg->getHeader()) + "], loss [" + loss + "]\n";
 
     std::cout << line_to_print << std::endl;
     outputBuffer.push_back(line_to_print);
-    // outputFile << line_to_print << std::endl;
+// outputFile << line_to_print << std::endl;
 
 }
 void Node::Timeout_print(int seqnum) {
@@ -407,7 +424,7 @@ void Node::selfMessageDelay(Message_Base *msg, double delay) {
 }
 void Node::selfMessageDuplicate(Message_Base *msg, double delay) {
     double duplicationDelay = par("DuplicationDelay").doubleValue();
-    //Message_Base *duplicatedMessage = msg->dup();
+//Message_Base *duplicatedMessage = msg->dup();
     Message_Base *duplicatedMessage = new Message_Base(*msg);
     msg->setType(1);
     duplicatedMessage->setType(2);
