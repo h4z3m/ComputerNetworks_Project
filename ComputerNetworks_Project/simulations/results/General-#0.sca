@@ -1,8 +1,8 @@
 version 3
-run General-0-20221209-14:43:23-4800
+run General-0-20221209-15:18:53-1160
 attr configname General
-attr datetime 20221209-14:43:23
-attr datetimef 20221209-144323
+attr datetime 20221209-15:18:53
+attr datetimef 20221209-151853
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
@@ -10,7 +10,7 @@ attr iterationvarsd ""
 attr iterationvarsf ""
 attr measurement ""
 attr network Network
-attr processid 4800
+attr processid 1160
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -26,7 +26,7 @@ config **.TransmissionDelay (0.3)
 config **.ErrorDelay (4.0)
 config **.WindowSize (5)
 config **.TimeoutInterval (10)
-config **.ACKLossProbability (50)
+config **.ACKLossProbability (10)
 config debug-on-errors true
 
 par Network.coordinator typename "\"computernetworks_project.Coordinator\""
@@ -37,7 +37,7 @@ par Network.Node1 TransmissionDelay 0.3
 par Network.Node1 ErrorDelay 4
 par Network.Node1 WindowSize 5
 par Network.Node1 TimeoutInterval 10
-par Network.Node1 ACKLossProbability 50
+par Network.Node1 ACKLossProbability 10
 par Network.Node0 typename "\"computernetworks_project.Node\""
 par Network.Node0 ProcessingDelay 0.5
 par Network.Node0 DuplicationDelay 0.1
@@ -45,7 +45,7 @@ par Network.Node0 TransmissionDelay 0.3
 par Network.Node0 ErrorDelay 4
 par Network.Node0 WindowSize 5
 par Network.Node0 TimeoutInterval 10
-par Network.Node0 ACKLossProbability 50
+par Network.Node0 ACKLossProbability 10
 par Network typename "\"computernetworks_project.simulations.Network\""
 par Network ProcessingDelay 0.5
 par Network DuplicationDelay 0.1
@@ -53,5 +53,5 @@ par Network TransmissionDelay 0.3
 par Network ErrorDelay 4
 par Network WindowSize 5
 par Network TimeoutInterval 10
-par Network ACKLossProbability 50
+par Network ACKLossProbability 10
 

@@ -189,6 +189,10 @@ void Node::handleMessage(cMessage *msg) {
             if (tmp_bits[Loss] == 0) {
                 send_msg(mmsg);
             }
+            else
+            {
+                cancelAndDelete(mmsg);
+            }
         }
         }
     }
@@ -230,14 +234,16 @@ void Node::handleMessage(cMessage *msg) {
                         ////////////////////
                         //Remove All events
                         cFutureEventSet *heap =
-                                cSimulation::getActiveSimulation()->getFES();
+                        cSimulation::getActiveSimulation()->getFES();
                         heap->clear();
-
+                        std::cout<<"I'm the sender and i got the last frame\n....Terminating.....\n"<<std::endl;
+                        outputBuffer.push_back("I'm the sender and i got the last frame\n....Terminating.....\n");
                         printToFile();
                         finish();
                         return;
                         /////////////////
                     }
+            cancelAndDelete(mmsg);
         } else if (gateName == "in_gate" && NodeType_Receiver == nodeType) {
             //[RECEIVER NODE] New message for receiver
             srand(time(0));
@@ -256,7 +262,7 @@ void Node::handleMessage(cMessage *msg) {
             mmsg->setAck_no(control_frame_expected);
             mmsg->setPayload("");
             int loss_prob = rand() % 100;
-            bool lost_tt = (loss_prob < par("ACKLossProbability").intValue());
+            bool lost_tt = (loss_prob < par("ACKLossProbability").doubleValue());
 
             if (!lost_tt) {
                 sendDelayed(mmsg,
@@ -264,7 +270,7 @@ void Node::handleMessage(cMessage *msg) {
                                 + par("ProcessingDelay").doubleValue(),
                         "out_gate");
             } else {
-                cancelAndDelete(msg);
+                cancelAndDelete(mmsg);
             }
             Message_Base *printSelfMessage = new Message_Base(*mmsg);
             printSelfMessage->setTrailer(lost_tt);
@@ -495,7 +501,7 @@ void Node::selfMessageDuplicate(Message_Base *msg, double delay) {
 void Node::send_logic(Message_Base *mmsg, int msg_index) {
     std::bitset<4> tmp_bits(errorArray[msg_index]);
     framing(mmsg, messageArray[msg_index], msg_index, tmp_bits[Modification]);
-    int delay_time =
+    double delay_time =
             (tmp_bits[Delay] == 1) ? par("ErrorDelay").doubleValue() : 0;
     if (tmp_bits[Dup] == 1) {
 

@@ -15,7 +15,7 @@ network Network
         double ErrorDelay = default(4.0);
         double WindowSize = default(5);
         double TimeoutInterval = default(10);
-        int ACKLossProbability = default(10);
+        double ACKLossProbability = default(10);
 
         @display("bgb=281,212");
 
