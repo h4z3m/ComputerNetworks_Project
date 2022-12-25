@@ -300,10 +300,11 @@ void Node::readMessages(std::string &fileName,
 
         std::string tmp_line = "";
         std::string tmp_msg = "";
-
+        char dummy;
         while (std::getline(node_file, tmp_line)) {
             std::stringstream s_stream(tmp_line);
-            s_stream >> tmp_errorcodeBinary;
+            s_stream >> std::noskipws >>tmp_errorcodeBinary>>dummy;
+
             std::getline(s_stream, tmp_msg, '\n');
 
             // Push back into the vectors
