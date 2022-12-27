@@ -23,9 +23,9 @@ simple Node
         parameters:
         double ProcessingDelay = default(0.5);
         double DuplicationDelay = default(0.1);
-        double TransmissionDelay = default(0.3);
+        double TransmissionDelay = default(0.5);
         double ErrorDelay = default(4.0);
-        double WindowSize = default(5);
+        int WindowSize = default(4);
         double TimeoutInterval = default(10);
         double ACKLossProbability = default(10);
 

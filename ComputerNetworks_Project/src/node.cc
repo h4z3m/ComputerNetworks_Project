@@ -99,8 +99,8 @@ void Node::handleMessage(cMessage *msg) {
             }
 
             int limit =
-                    ((par("WindowSize").doubleValue() + base) > size_of_Array) ?
-                            size_of_Array : par("WindowSize").doubleValue() + base;
+                    ((par("WindowSize").intValue() + base) > size_of_Array) ?
+                            size_of_Array : par("WindowSize").intValue() + base;
             if (next_frame_to_send >= base && next_frame_to_send < limit) {
 
                 if (next_frame_to_send < size_of_Array-1) {
@@ -128,7 +128,7 @@ void Node::handleMessage(cMessage *msg) {
         case MsgType_t::timeout: //timeout_happened to be send
         {
             if (mmsg->getHeader() == base) {
-                Timeout_print(mmsg->getHeader());
+                Timeout_print(mmsg->getHeader()% par("WindowSize").intValue());
                 next_frame_to_send = base + 1;
                 frame_to_print = base+1;
                 cancelAndDelete(mmsg);
@@ -142,7 +142,7 @@ void Node::handleMessage(cMessage *msg) {
 
 
 
-                printReading(errorArray[base]);
+                //printReading(errorArray[base]);
                 Message_Base *nmsg = new Message_Base();
                 framing(nmsg, messageArray[base], base, false);
                 nmsg->setType(MsgType_t::Data);
@@ -199,7 +199,12 @@ void Node::handleMessage(cMessage *msg) {
 
     else if (msg->isSelfMessage() && NodeType_Receiver == nodeType) {
 
-        control_print(mmsg, mmsg->getTrailer());
+
+        if (mmsg->getHeader() == control_frame_expected) {
+            control_frame_expected++;
+            mmsg->setAck_no(control_frame_expected);
+            control_print(mmsg, mmsg->getTrailer());
+        }
         cancelAndDelete(mmsg);
         return;
     } else {
@@ -227,7 +232,9 @@ void Node::handleMessage(cMessage *msg) {
 
         else if (gateName == "in_gate" && NodeType_Sender == nodeType) {
             //TODO recieve ACK/NACK
-            if (mmsg->getHeader() == base) {
+            //delay
+
+            if (mmsg->getHeader() == base && mmsg->getType()==MsgType_t::ACK) {
                 base++;
             }
             if (base >= size_of_Array) {
@@ -254,12 +261,10 @@ void Node::handleMessage(cMessage *msg) {
                 mmsg->setType(MsgType_t::ACK);
             }
 
-            if (mmsg->getHeader() == control_frame_expected) {
-                control_frame_expected++;
-            }
 
 
-            mmsg->setAck_no(control_frame_expected);
+
+
             mmsg->setPayload("");
             int loss_prob = rand() % 100;
             bool lost_tt = (loss_prob < par("ACKLossProbability").doubleValue());
@@ -267,7 +272,7 @@ void Node::handleMessage(cMessage *msg) {
             if (!lost_tt) {
                 sendDelayed(mmsg,
                         par("TransmissionDelay").doubleValue()
-                                + par("ProcessingDelay").doubleValue(),
+                                + 2*par("ProcessingDelay").doubleValue(),
                         "out_gate");
             } else {
                 cancelAndDelete(mmsg);
@@ -438,7 +443,7 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input) {
 
     std::string line_to_print = "At time [" + simTime().str() + "] Node["
             + this->getName()[4] + "] sent frame with seq_num=["
-            + std::to_string(msg->getHeader()) + "], and payload=["
+            + std::to_string(msg->getHeader()%par("WindowSize").intValue()) + "], and payload=["
             + msg->getPayload() + "], and trailer =[" + trailer_bits.to_string()
             + "] ,Lost [" + lost + "], Duplicate ["
             + std::to_string(msg->getType()) + "], Delay ["
@@ -469,7 +474,7 @@ void Node::control_print(Message_Base *msg, bool lost) {
 
     std::string line_to_print = "At time [" + simTime().str() + "], Node["
             + this->getName()[4] + "] Sending [" + ack + "] with number["
-            + std::to_string(msg->getAck_no()) + "], loss [" + loss + "]\n";
+            + std::to_string((msg->getHeader()+1)%par("WindowSize").intValue()) + "], loss [" + loss + "]\n";
 
     std::cout << line_to_print << std::endl;
     outputBuffer.push_back(line_to_print);
