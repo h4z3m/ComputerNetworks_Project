@@ -254,7 +254,7 @@ void Node::handleMessage(cMessage *msg) {
                 mmsg->setType(MsgType_t::ACK);
             }
 
-            if (mmsg->getHeader() == control_frame_expected) {
+            if (mmsg->getHeader() == control_frame_expected && mmsg->getType(MsgType_t::ACK) {
                 control_frame_expected++;
             }
 

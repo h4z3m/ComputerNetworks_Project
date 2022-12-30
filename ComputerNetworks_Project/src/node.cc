@@ -13,7 +13,7 @@ static std::vector<Node::ErrorCodeType_t> errorArray;
 static std::vector<std::string> messageArray;
 static int size_of_Array;
 static int frame_to_print = 1;
-
+static int Modified = 0;
 
 void Node::openOutputFile() {
 
@@ -94,8 +94,11 @@ void Node::handleMessage(cMessage *msg) {
 
             //cancelEvent(mmsg);
             if (next_frame_to_send < size_of_Array) {
-                scheduleAt(simTime() + par("ProcessingDelay").doubleValue(), mmsg);
+                scheduleAt(simTime() + par("ProcessingDelay").doubleValue(),
+                        mmsg);
 
+            } else {
+                cancelAndDelete(mmsg);
             }
 
             int limit =
@@ -103,14 +106,11 @@ void Node::handleMessage(cMessage *msg) {
                             size_of_Array : par("WindowSize").intValue() + base;
             if (next_frame_to_send >= base && next_frame_to_send < limit) {
 
-                if (next_frame_to_send < size_of_Array-1) {
-
+                if (next_frame_to_send < size_of_Array - 1) {
 
                     printReading(errorArray[frame_to_print]);
 
                 }
-
-
 
                 Message_Base *newmsg = new Message_Base();
                 send_logic(newmsg, next_frame_to_send);
@@ -128,69 +128,66 @@ void Node::handleMessage(cMessage *msg) {
         case MsgType_t::timeout: //timeout_happened to be send
         {
             if (mmsg->getHeader() == base) {
-                Timeout_print(mmsg->getHeader()% par("WindowSize").intValue());
+                Timeout_print(mmsg->getHeader() % par("WindowSize").intValue());
                 next_frame_to_send = base + 1;
-                frame_to_print = base+1;
+                frame_to_print = base + 1;
+                control_frame_expected = base;
                 cancelAndDelete(mmsg);
                 ////////////////////
                 //Remove All events
                 cFutureEventSet *heap =
-                cSimulation::getActiveSimulation()->getFES();
+                        cSimulation::getActiveSimulation()->getFES();
                 heap->clear();
                 /////////////////
-
-
-
 
                 //printReading(errorArray[base]);
                 Message_Base *nmsg = new Message_Base();
                 framing(nmsg, messageArray[base], base, false);
                 nmsg->setType(MsgType_t::Data);
-                sendDelayed(nmsg, par("TransmissionDelay").doubleValue()+par("ProcessingDelay").doubleValue(), "out_gate");
-
+                sendDelayed(nmsg,
+                        par("TransmissionDelay").doubleValue()
+                                + par("ProcessingDelay").doubleValue(),
+                        "out_gate");
 
                 Message_Base *smsg = new Message_Base();
                 smsg->setType(MsgType_t::To_Send);
-                scheduleAfter(2*par("ProcessingDelay").doubleValue(), smsg);
+                scheduleAfter(2 * par("ProcessingDelay").doubleValue(), smsg);
 
                 Message_Base *tmsg = new Message_Base();
                 tmsg->setType(MsgType_t::timeout_print);
                 scheduleAfter(par("ProcessingDelay").doubleValue(), tmsg);
 
-
-
                 Message_Base *timeout = new Message_Base();
                 timeout->setType(MsgType_t::timeout);
-                scheduleAfter(par("TimeoutInterval").doubleValue()+par("ProcessingDelay").doubleValue(), timeout);
+                scheduleAfter(
+                        par("TimeoutInterval").doubleValue()
+                                + par("ProcessingDelay").doubleValue(),
+                        timeout);
 
             }
 
             break;
         }
         case MsgType_t::timeout_print: //timeout_happened to be send
-               {
+        {
 
-                   framing(mmsg, messageArray[base], base, false);
-                   mmsg->setType(MsgType_t::Data);
-                   ErrorCodeType_t ss = ErrorCodeType_NoError;
-                   printBeforeTransimission(mmsg, ss);
-                   if((base +1) <size_of_Array)
-                   {
-                   printReading(errorArray[base+1]);
-                   }
-                  cancelAndDelete(mmsg);
+            framing(mmsg, messageArray[base], base, false);
+            mmsg->setType(MsgType_t::Data);
+            ErrorCodeType_t ss = ErrorCodeType_NoError;
+            printBeforeTransimission(mmsg, ss);
+            if ((base + 1) < size_of_Array) {
+                printReading(errorArray[base + 1]);
+            }
+            cancelAndDelete(mmsg);
 
-
-               break;
-               }
+            break;
+        }
         default: {
             std::bitset<4> tmp_bits(errorArray[mmsg->getHeader()]);
 
             if (tmp_bits[Loss] == 0) {
                 send_msg(mmsg);
-            }
-            else
-            {
+            } else {
                 cancelAndDelete(mmsg);
             }
         }
@@ -199,9 +196,11 @@ void Node::handleMessage(cMessage *msg) {
 
     else if (msg->isSelfMessage() && NodeType_Receiver == nodeType) {
 
-
-        if (mmsg->getHeader() == control_frame_expected) {
-            control_frame_expected++;
+        if(mmsg->getHeader()==control_frame_expected || mmsg->getType()==MsgType_t::NACK)
+        {
+            control_frame_expected =
+                    (mmsg->getType() == MsgType_t::NACK) ?
+                            control_frame_expected : control_frame_expected++;
             mmsg->setAck_no(control_frame_expected);
             control_print(mmsg, mmsg->getTrailer());
         }
@@ -234,25 +233,30 @@ void Node::handleMessage(cMessage *msg) {
             //TODO recieve ACK/NACK
             //delay
 
-            if (mmsg->getHeader() == base && mmsg->getType()==MsgType_t::ACK) {
+            if (mmsg->getHeader() == base
+                    && mmsg->getType() == MsgType_t::ACK) {
                 base++;
             }
             if (base >= size_of_Array) {
-                        ////////////////////
-                        //Remove All events
-                        cFutureEventSet *heap =
+                ////////////////////
+                //Remove All events
+                cFutureEventSet *heap =
                         cSimulation::getActiveSimulation()->getFES();
-                        heap->clear();
-                        std::cout<<"I'm the sender and i got the last frame\n....Terminating.....\n"<<std::endl;
-                        outputBuffer.push_back("I'm the sender and i got the last frame\n....Terminating.....\n");
-                        printToFile();
-                        finish();
-                        return;
-                        /////////////////
-                    }
+                heap->clear();
+                std::cout
+                        << "I'm the sender and i got the last frame\n....Terminating.....\n"
+                        << std::endl;
+                outputBuffer.push_back(
+                        "I'm the sender and i got the last frame\n....Terminating.....\n");
+                printToFile();
+                finish();
+                return;
+                /////////////////
+            }
             cancelAndDelete(mmsg);
         } else if (gateName == "in_gate" && NodeType_Receiver == nodeType) {
             //[RECEIVER NODE] New message for receiver
+
             srand(time(0));
 
             if (errorDetection(mmsg)) {
@@ -261,10 +265,6 @@ void Node::handleMessage(cMessage *msg) {
                 mmsg->setType(MsgType_t::ACK);
             }
 
-
-
-
-
             mmsg->setPayload("");
             int loss_prob = rand() % 100;
             bool lost_tt = (loss_prob < par("ACKLossProbability").doubleValue());
@@ -272,7 +272,7 @@ void Node::handleMessage(cMessage *msg) {
             if (!lost_tt) {
                 sendDelayed(mmsg,
                         par("TransmissionDelay").doubleValue()
-                                + 2*par("ProcessingDelay").doubleValue(),
+                                + 2 * par("ProcessingDelay").doubleValue(),
                         "out_gate");
             } else {
                 cancelAndDelete(mmsg);
@@ -308,7 +308,7 @@ void Node::readMessages(std::string &fileName,
         char dummy;
         while (std::getline(node_file, tmp_line)) {
             std::stringstream s_stream(tmp_line);
-            s_stream >> std::noskipws >>tmp_errorcodeBinary>>dummy;
+            s_stream >> std::noskipws >> tmp_errorcodeBinary >> dummy;
 
             std::getline(s_stream, tmp_msg, '\n');
 
@@ -332,6 +332,7 @@ void Node::modifyMessage(std::string &payload) {
     int bitIdx = rand() % 8;
     int byteIdx = rand() % payload.length();
     payload[byteIdx] ^= (1 << bitIdx);
+    Modified = byteIdx * 8 + bitIdx;
 }
 
 void Node::printReading(ErrorCodeType_t errorCode) {
@@ -339,8 +340,8 @@ void Node::printReading(ErrorCodeType_t errorCode) {
     std::string node_reading = "At time [" + simTime().str() + "], Node["
             + this->getName()[4] + +"], Introducing channel error with code = "
             + std::bitset<4>(errorCode).to_string() + "\n";
-    static int i =0;
-    std::cout << node_reading << "  i = "<<i<<std::endl;
+    static int i = 0;
+    std::cout << node_reading << "  i = " << i << std::endl;
     i++;
     outputBuffer.push_back(node_reading);
 //outputFile << node_reading << std::endl;
@@ -432,6 +433,9 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input) {
     std::bitset<4> code(input);
 
     std::string lost = "No";
+
+    int Modify = -1;
+
     if (code[2] == 1) {
         lost = "Yes";
     }
@@ -440,12 +444,16 @@ void Node::printBeforeTransimission(Message_Base *msg, ErrorCodeType_t input) {
     if (code[0] == 1) {
         delay = par("ErrorDelay").doubleValue();
     }
+    if (code[3] == 1) {
+        Modify = Modified;
+    }
 
     std::string line_to_print = "At time [" + simTime().str() + "] Node["
             + this->getName()[4] + "] sent frame with seq_num=["
-            + std::to_string(msg->getHeader()%par("WindowSize").intValue()) + "], and payload=["
-            + msg->getPayload() + "], and trailer =[" + trailer_bits.to_string()
-            + "] ,Lost [" + lost + "], Duplicate ["
+            + std::to_string(msg->getHeader() % par("WindowSize").intValue())
+            + "], and payload=[" + msg->getPayload() + "], and trailer =["
+            + trailer_bits.to_string() + "] ,Modified ["
+            + std::to_string(Modify) + +"] ,Lost [" + lost + "], Duplicate ["
             + std::to_string(msg->getType()) + "], Delay ["
             + std::to_string(delay) + "].\n";
 
@@ -465,16 +473,20 @@ void Node::send_msg(Message_Base *msg) {
 void Node::control_print(Message_Base *msg, bool lost) {
     std::string ack;
     std::string loss = (lost) ? "Yes" : "No";
+    int ack_no_now;
     if (msg->getType() == 2) {
         ack = "NACK";
+        ack_no_now = msg->getHeader();
     } else if (msg->getType() == 1) {
         ack = "ACK";
+        ack_no_now = msg->getHeader() + 1;
     } else {/*nothing*/
     }
 
     std::string line_to_print = "At time [" + simTime().str() + "], Node["
             + this->getName()[4] + "] Sending [" + ack + "] with number["
-            + std::to_string((msg->getHeader()+1)%par("WindowSize").intValue()) + "], loss [" + loss + "]\n";
+            + std::to_string(ack_no_now % par("WindowSize").intValue())
+            + "], loss [" + loss + "]\n";
 
     std::cout << line_to_print << std::endl;
     outputBuffer.push_back(line_to_print);
